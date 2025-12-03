@@ -19,7 +19,7 @@ export const GameCard = ({ title, description, type, isMain, image, onInscribirs
           : 'bg-card border-border hover:border-primary/30'
       }`}
     >
-      {/* Blur overlay */}
+
       {image && (
         <div className="absolute inset-0 rounded-xl backdrop-blur-sm bg-black/40" />
       )}
@@ -38,7 +38,7 @@ export const GameCard = ({ title, description, type, isMain, image, onInscribirs
           {description}
         </p>
         <Button 
-          variant={isMain ? "hero" : "card"} 
+          variant={"card"} 
           size={isMain ? "lg" : "default"}
           onClick={onInscribirse}
           className="w-full"
