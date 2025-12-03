@@ -11,23 +11,21 @@ interface GameCardProps {
 
 export const GameCard = ({ title, description, type, isMain, image, onInscribirse }: GameCardProps) => {
   return (
-    <div 
+    <div
+      style={image ? { backgroundImage: `url(${image})`, backgroundSize: 'cover', backgroundPosition: 'center' } : undefined}
       className={`group relative rounded-xl border transition-all duration-500 hover:scale-105 ${
         isMain 
           ? 'bg-card border-primary/50 glow-box md:col-span-2 md:row-span-2' 
           : 'bg-card border-border hover:border-primary/30'
       }`}
     >
-      <div className="p-6 h-full flex flex-col">
-        {image && (
-          <div className={`mb-4 flex justify-center ${isMain ? 'h-32' : 'h-16'}`}>
-            <img 
-              src={image} 
-              alt={`${title} logo`} 
-              className="h-full w-auto object-contain"
-            />
-          </div>
-        )}
+      {/* Blur overlay */}
+      {image && (
+        <div className="absolute inset-0 rounded-xl backdrop-blur-sm bg-black/40" />
+      )}
+      
+      <div className="p-6 h-full flex flex-col relative z-10">
+      
         <div className="mb-2">
           <span className={`text-xs uppercase tracking-wider ${type === 'equipo' ? 'text-primary' : 'text-accent'}`}>
             {type === 'equipo' ? 'Equipo' : 'Individual'}

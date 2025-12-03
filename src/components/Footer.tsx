@@ -9,13 +9,13 @@ export const Footer = () => {
             </div>
             <p className="text-sm text-muted-foreground mb-2">
               <strong>Dirección</strong><br />
-              Liga de Torneos, centro de competencia digital
+              Universidad de las Fuerzas Armadas ESPE, Sangolquí, Ecuador
             </p>
             <p className="text-sm text-muted-foreground">
               <strong>Contacto</strong><br />
-              <a href="mailto:info@cyberarena.com" className="text-primary hover:underline">
-                info@cyberarena.com
-              </a>
+              <p className="text-primary ">
+               club.de.software.espe@gmail.com
+              </p>
             </p>
           </div>
           
@@ -30,26 +30,26 @@ export const Footer = () => {
           <div>
             <h4 className="font-semibold mb-4">Juegos</h4>
             <ul className="space-y-2 text-sm text-muted-foreground">
-              <li><a href="#" className="hover:text-foreground transition-colors">League of Legends</a></li>
-              <li><a href="#" className="hover:text-foreground transition-colors">Valorant</a></li>
-              <li><a href="#" className="hover:text-foreground transition-colors">TFT</a></li>
-              <li><a href="#" className="hover:text-foreground transition-colors">Chess</a></li>
-              <li><a href="#" className="hover:text-foreground transition-colors">Clash Royale</a></li>
+              <li><a href="#juegos" className="hover:text-foreground transition-colors">League of Legends</a></li>
+              <li><a href="#juegos" className="hover:text-foreground transition-colors">Valorant</a></li>
+              <li><a href="#juegos" className="hover:text-foreground transition-colors">TFT</a></li>
+              <li><a href="#juegos" className="hover:text-foreground transition-colors">Chess</a></li>
+              <li><a href="#juegos" className="hover:text-foreground transition-colors">Clash Royale</a></li>
             </ul>
           </div>
           
           <div>
-            <h4 className="font-semibold mb-4">Legal</h4>
+            <h4 className="font-semibold mb-4">Síguenos</h4>
             <ul className="space-y-2 text-sm text-muted-foreground">
-              <li><a href="#" className="hover:text-foreground transition-colors">Términos</a></li>
-              <li><a href="#" className="hover:text-foreground transition-colors">Privacidad</a></li>
-              <li><a href="#" className="hover:text-foreground transition-colors">Reglas del torneo</a></li>
+              <li><a href="https://www.tiktok.com/@clubsoftwareespe" className="hover:text-foreground transition-colors">Tik tok</a></li>
+              <li><a href="https://www.instagram.com/openhub.club/" className="hover:text-foreground transition-colors">Instagram</a></li>
+             
             </ul>
           </div>
         </div>
         
         <div className="border-t border-border mt-8 pt-8 text-center text-sm text-muted-foreground">
-          © 2024 Cyber Arena. Todos los derechos reservados.
+          © 2025 Cyber Arena. Todos los derechos reservados.
         </div>
       </div>
     </footer>
