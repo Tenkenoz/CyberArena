@@ -26,6 +26,9 @@ interface TeamData {
 const roles = ['Top', 'Jungle', 'Mid', 'ADC', 'Support'];
 
 export const LeagueOfLegendsForm: React.FC<{ onClose: () => void }> = ({ onClose }) => {
+  // Key para forzar el reinicio visual del formulario (especialmente el input file)
+  const [formKey, setFormKey] = useState(0);
+
   const [teamData, setTeamData] = useState<TeamData>({
     nombreEquipo: '',
     regionServidor: '',
@@ -47,6 +50,28 @@ export const LeagueOfLegendsForm: React.FC<{ onClose: () => void }> = ({ onClose
   const [participadoTorneo, setParticipadoTorneo] = useState<string>('');
   const [aceptaReglas, setAceptaReglas] = useState(false);
   const [loading, setLoading] = useState(false);
+
+  // Función para resetear el formulario
+  const resetForm = () => {
+    setTeamData({
+      nombreEquipo: '',
+      regionServidor: '',
+      logoEquipo: null,
+      capitan: '',
+      nombreJugador: '',
+      numeroContacto: '',
+      nombreInvocador: '',
+    });
+    setPlayers(Array.from({ length: 4 }).map(() => ({ nombre: '', rol: '', cedula: '', nombreInvocador: '' })));
+    setSuplente({ nombre: '', rol: '', cedula: '', nombreInvocador: '' });
+    setCoach({ nombre: '', rol: '', cedula: '', nombreInvocador: '' });
+    setShowSuplente(false);
+    setShowCoach(false);
+    setParticipadoTorneo('');
+    setAceptaReglas(false);
+    // Cambiar la key fuerza a React a recrear el componente form, limpiando inputs de archivo
+    setFormKey(prev => prev + 1);
+  };
 
   const updatePlayer = (index: number, field: keyof PlayerData, value: string) => {
     setPlayers(prev => {
@@ -92,25 +117,29 @@ export const LeagueOfLegendsForm: React.FC<{ onClose: () => void }> = ({ onClose
 
     setLoading(true);
     try {
-      // Si tu backend acepta multipart/form-data (recomendado para subir imágenes):
-      const form = new FormData();
-      form.append('nombreEquipo', teamData.nombreEquipo);
-      form.append('regionServidor', teamData.regionServidor);
-      if (teamData.logoEquipo) form.append('logoEquipo', teamData.logoEquipo);
-      form.append('capitan', teamData.capitan);
-      form.append('nombreJugador', teamData.nombreJugador);
-      form.append('numeroContacto', teamData.numeroContacto);
-      form.append('nombreInvocadorTeam', teamData.nombreInvocador);
-      form.append('jugadores', JSON.stringify(players));
-      form.append('suplente', JSON.stringify(showSuplente ? suplente : null));
-      form.append('coach', JSON.stringify(showCoach ? coach : null));
-      form.append('participadoTorneo', participadoTorneo);
-      form.append('aceptaReglas', String(aceptaReglas));
+      // PREPARAMOS EL PAYLOAD JSON (Tu backend espera JSON, no FormData)
+      const payload = {
+        nombreEquipo: teamData.nombreEquipo,
+        regionServidor: teamData.regionServidor,
+        // Enviamos el nombre del archivo como string
+        logoURL: teamData.logoEquipo ? teamData.logoEquipo.name : "",
+        capitan: teamData.capitan,
+        nombreJugador: teamData.nombreJugador,
+        numeroContacto: teamData.numeroContacto,
+        nombreInvocadorTeam: teamData.nombreInvocador,
+        jugadores: players,
+        suplente: showSuplente ? suplente : null,
+        coach: showCoach ? coach : null,
+        participadoTorneo: participadoTorneo,
+        aceptaReglas: aceptaReglas
+      };
 
       const res = await fetch('http://localhost:4000/api/lol/inscripcion', {
         method: 'POST',
-        body: form,
-        // NO pongas 'Content-Type' aquí cuando usas FormData; el navegador lo genera.
+        headers: {
+          'Content-Type': 'application/json' // Header obligatorio
+        },
+        body: JSON.stringify(payload),
       });
 
       if (!res.ok) {
@@ -121,10 +150,15 @@ export const LeagueOfLegendsForm: React.FC<{ onClose: () => void }> = ({ onClose
         return;
       }
 
+      // --- ÉXITO ---
+      // El backend no devuelve JSON en todos los casos según tu código original, 
+      // pero si status es ok, procedemos.
       const data = await res.json().catch(() => null);
 
-      toast.success('¡Inscripción enviada y guardada en MongoDB!');
-      onClose();
+      toast.success('Registro Exitoso'); // <--- MENSAJE AGREGADO
+      resetForm(); // <--- LIMPIAR FORMULARIO
+      
+      onClose(); // Cerrar modal si aplica
     } catch (error) {
       console.error(error);
       toast.error('Error de conexión con la API');
@@ -134,7 +168,7 @@ export const LeagueOfLegendsForm: React.FC<{ onClose: () => void }> = ({ onClose
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-8 max-h-[70vh] overflow-y-auto pr-2">
+    <form key={formKey} onSubmit={handleSubmit} className="space-y-8 max-h-[70vh] overflow-y-auto pr-2">
       {/* Datos del equipo */}
       <div className="space-y-4">
         <h3 className="font-display text-xl font-bold text-primary border-b border-border pb-2">
