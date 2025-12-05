@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -13,6 +13,10 @@ interface PlayerData {
 }
 
 export const ValorantForm = ({ onClose }: { onClose: () => void }) => {
+  // Key para reiniciar inputs visualmente (ej. input file)
+  const [formKey, setFormKey] = useState(0);
+  const [loading, setLoading] = useState(false);
+
   const [teamData, setTeamData] = useState({
     nombreEquipo: '',
     regionServidor: '',
@@ -34,14 +38,24 @@ export const ValorantForm = ({ onClose }: { onClose: () => void }) => {
   const [participadoTorneo, setParticipadoTorneo] = useState<string>('');
   const [aceptaReglas, setAceptaReglas] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!aceptaReglas) {
-      toast.error('Debes aceptar las reglas del torneo');
-      return;
-    }
-    toast.success('¡Inscripción enviada exitosamente!');
-    onClose();
+  const resetForm = () => {
+    setTeamData({
+      nombreEquipo: '',
+      regionServidor: '',
+      logoEquipo: null,
+      capitan: '',
+      nombreJugador: '',
+      numeroContacto: '',
+      riotId: '',
+    });
+    setPlayers(Array(4).fill(null).map(() => ({ nombre: '', cedula: '', riotId: '' })));
+    setSuplente({ nombre: '', cedula: '', riotId: '' });
+    setCoach({ nombre: '', cedula: '', riotId: '' });
+    setShowSuplente(false);
+    setShowCoach(false);
+    setParticipadoTorneo('');
+    setAceptaReglas(false);
+    setFormKey(prev => prev + 1);
   };
 
   const updatePlayer = (index: number, field: keyof PlayerData, value: string) => {
@@ -50,12 +64,69 @@ export const ValorantForm = ({ onClose }: { onClose: () => void }) => {
     setPlayers(newPlayers);
   };
 
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!aceptaReglas) {
+      toast.error('Debes aceptar las reglas del torneo');
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      // Preparamos el payload JSON para la API de Valorant
+      const payload = {
+        nombreEquipo: teamData.nombreEquipo,
+        regionServidor: teamData.regionServidor,
+        logoURL: teamData.logoEquipo ? teamData.logoEquipo.name : "", // Enviamos string
+        capitan: teamData.capitan,
+        nombreJugador: teamData.nombreJugador,
+        numeroContacto: teamData.numeroContacto,
+        riotIdMain: teamData.riotId, // Mapeamos al campo del modelo
+        
+        jugadores: players,
+        suplente: showSuplente ? suplente : null,
+        coach: showCoach ? coach : null,
+        
+        participadoTorneo: participadoTorneo,
+        aceptaReglas: aceptaReglas
+      };
+
+      const res = await fetch('http://localhost:4000/api/valorant/inscripcion', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (!res.ok) {
+        const text = await res.text();
+        console.error('Error Valorant API:', text);
+        toast.error('Error al enviar la inscripción');
+        setLoading(false);
+        return;
+      }
+
+      toast.success('¡Inscripción de Valorant exitosa!');
+      resetForm();
+      onClose();
+
+    } catch (error) {
+      console.error(error);
+      toast.error('Error de conexión con el servidor');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
-    <form onSubmit={handleSubmit} className="space-y-8 max-h-[70vh] overflow-y-auto pr-2">
+    <form key={formKey} onSubmit={handleSubmit} className="space-y-8 max-h-[70vh] overflow-y-auto pr-2">
       {/* Datos del equipo */}
       <div className="space-y-4">
         <h3 className="font-display text-xl font-bold text-primary border-b border-border pb-2">
-          Datos del Equipo
+          Datos del Equipo (Valorant)
         </h3>
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -123,7 +194,7 @@ export const ValorantForm = ({ onClose }: { onClose: () => void }) => {
           </div>
           
           <div className="space-y-2 md:col-span-2">
-            <Label htmlFor="riotIdTeam">Riot ID</Label>
+            <Label htmlFor="riotIdTeam">Riot ID (Main)</Label>
             <Input
               id="riotIdTeam"
               value={teamData.riotId}
@@ -294,11 +365,11 @@ export const ValorantForm = ({ onClose }: { onClose: () => void }) => {
       </div>
 
       <div className="flex gap-4 pt-4">
-        <Button type="button" variant="outline" onClick={onClose} className="flex-1">
+        <Button type="button" variant="outline" onClick={onClose} className="flex-1" disabled={loading}>
           Cancelar
         </Button>
-        <Button type="submit" variant="hero" className="flex-1">
-          Enviar Inscripción
+        <Button type="submit" variant="hero" className="flex-1" disabled={loading}>
+          {loading ? 'Inscribiendo...' : 'Enviar Inscripción'}
         </Button>
       </div>
     </form>

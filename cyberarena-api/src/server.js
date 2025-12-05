@@ -3,7 +3,8 @@ import mongoose from "mongoose";
 import cors from "cors";
 import dotenv from "dotenv";
 import lolRoutes from "./routes/lol.routes.js";
-
+import valorantRoutes from "./routes/valorant.routes.js"; 
+import individualRoutes from './routes/individual.routes.js'; 
 dotenv.config();
 
 const app = express();
@@ -12,6 +13,8 @@ app.use(cors());
 app.use(express.json()); // ← IMPORTANTE
 
 app.use("/api/lol", lolRoutes);
+app.use("/api/valorant", valorantRoutes);
+app.use('/api', individualRoutes); 
 
 mongoose
   .connect(process.env.MONGO_URI)

@@ -11,6 +11,15 @@ interface GenericGameFormProps {
   onClose: () => void;
 }
 
+// Función auxiliar para mapear el nombre visual al ID de la API
+const getGameId = (gameName: string): string => {
+  const lower = gameName.toLowerCase();
+  if (lower.includes('tft') || lower.includes('teamfight')) return 'tft';
+  if (lower.includes('chess') || lower.includes('ajedrez')) return 'chess';
+  if (lower.includes('clash') || lower.includes('royale')) return 'clash-royale';
+  return '';
+};
+
 export const GenericGameForm = ({ gameName, onClose }: GenericGameFormProps) => {
   const [formData, setFormData] = useState({
     nombre: '',
@@ -21,15 +30,53 @@ export const GenericGameForm = ({ gameName, onClose }: GenericGameFormProps) => 
 
   const [participadoTorneo, setParticipadoTorneo] = useState<string>('');
   const [aceptaReglas, setAceptaReglas] = useState(false);
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
     if (!aceptaReglas) {
       toast.error('Debes aceptar las reglas del torneo');
       return;
     }
-    toast.success(`¡Inscripción a ${gameName} enviada exitosamente!`);
-    onClose();
+
+    const gameId = getGameId(gameName);
+    if (!gameId) {
+      toast.error('Error identificando el juego para la API');
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      // Conexión real a tu API de Cyber Arena
+      const response = await fetch(`http://localhost:4000/api/${gameId}/inscripcion`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          ...formData,
+          participadoTorneo: participadoTorneo || 'no',
+          aceptaReglas
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Error en la inscripción');
+      }
+
+      toast.success(data.message || `¡Inscripción a ${gameName} enviada exitosamente!`);
+      onClose();
+
+    } catch (error: any) {
+      console.error('Error de inscripción:', error);
+      toast.error(error.message || 'Error al conectar con el servidor');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -47,6 +94,7 @@ export const GenericGameForm = ({ gameName, onClose }: GenericGameFormProps) => 
               value={formData.nombre}
               onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
               required
+              disabled={loading}
             />
           </div>
           
@@ -57,6 +105,7 @@ export const GenericGameForm = ({ gameName, onClose }: GenericGameFormProps) => 
               value={formData.cedula}
               onChange={(e) => setFormData({ ...formData, cedula: e.target.value })}
               required
+              disabled={loading}
             />
           </div>
           
@@ -68,6 +117,7 @@ export const GenericGameForm = ({ gameName, onClose }: GenericGameFormProps) => 
               value={formData.telefono}
               onChange={(e) => setFormData({ ...formData, telefono: e.target.value })}
               required
+              disabled={loading}
             />
           </div>
           
@@ -79,6 +129,7 @@ export const GenericGameForm = ({ gameName, onClose }: GenericGameFormProps) => 
               onChange={(e) => setFormData({ ...formData, nombreUsuario: e.target.value })}
               placeholder={`Tu ID o nombre en ${gameName}`}
               required
+              disabled={loading}
             />
           </div>
         </div>
@@ -87,7 +138,12 @@ export const GenericGameForm = ({ gameName, onClose }: GenericGameFormProps) => 
       {/* Participación previa */}
       <div className="space-y-3">
         <Label>¿Has participado en otro torneo?</Label>
-        <RadioGroup value={participadoTorneo} onValueChange={setParticipadoTorneo} className="flex gap-6">
+        <RadioGroup 
+          value={participadoTorneo} 
+          onValueChange={setParticipadoTorneo} 
+          className="flex gap-6"
+          disabled={loading}
+        >
           <div className="flex items-center space-x-2">
             <RadioGroupItem value="si" id="torneo-si" />
             <Label htmlFor="torneo-si" className="cursor-pointer">Sí</Label>
@@ -106,6 +162,7 @@ export const GenericGameForm = ({ gameName, onClose }: GenericGameFormProps) => 
           checked={aceptaReglas}
           onCheckedChange={(checked) => setAceptaReglas(checked as boolean)}
           required
+          disabled={loading}
         />
         <Label htmlFor="aceptaReglas" className="cursor-pointer text-sm">
           Acepto las <a href="#" className="text-primary hover:underline">reglas del torneo</a> y confirmo que toda la información proporcionada es correcta.
@@ -113,11 +170,11 @@ export const GenericGameForm = ({ gameName, onClose }: GenericGameFormProps) => 
       </div>
 
       <div className="flex gap-4 pt-4">
-        <Button type="button" variant="outline" onClick={onClose} className="flex-1">
+        <Button type="button" variant="outline" onClick={onClose} className="flex-1" disabled={loading}>
           Cancelar
         </Button>
-        <Button type="submit" variant="hero" className="flex-1">
-          Enviar Inscripción
+        <Button type="submit" variant="hero" className="flex-1" disabled={loading}>
+          {loading ? 'Enviando...' : 'Enviar Inscripción'}
         </Button>
       </div>
     </form>
