@@ -32,17 +32,50 @@ export const GenericGameForm = ({ gameName, onClose }: GenericGameFormProps) => 
   const [aceptaReglas, setAceptaReglas] = useState(false);
   const [loading, setLoading] = useState(false);
 
+  // --- NUEVA FUNCIÓN DE VALIDACIÓN ---
+  const validateForm = () => {
+    // 1. Validar campos de texto
+    if (!formData.nombre.trim()) {
+      toast.error('Por favor, ingresa tu nombre completo.');
+      return false;
+    }
+    if (!formData.cedula.trim()) {
+      toast.error('Por favor, ingresa tu número de cédula.');
+      return false;
+    }
+    if (!formData.telefono.trim()) {
+      toast.error('Por favor, ingresa tu número de teléfono.');
+      return false;
+    }
+    if (!formData.nombreUsuario.trim()) {
+      toast.error(`Por favor, ingresa tu nombre de usuario en ${gameName}.`);
+      return false;
+    }
+
+    // 2. Validar selección de radio button
+    if (!participadoTorneo) {
+      toast.error('Por favor indica si has participado en torneos anteriormente.');
+      return false;
+    }
+
+    // 3. Validar reglas
+    if (!aceptaReglas) {
+      toast.error('Debes aceptar las reglas del torneo para continuar.');
+      return false;
+    }
+
+    return true;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!aceptaReglas) {
-      toast.error('Debes aceptar las reglas del torneo');
-      return;
-    }
+    // Ejecutamos las validaciones antes de enviar
+    if (!validateForm()) return;
 
     const gameId = getGameId(gameName);
     if (!gameId) {
-      toast.error('Error identificando el juego para la API');
+      toast.error('Error interno: No se pudo identificar el ID del juego.');
       return;
     }
 
@@ -57,7 +90,7 @@ export const GenericGameForm = ({ gameName, onClose }: GenericGameFormProps) => 
         },
         body: JSON.stringify({
           ...formData,
-          participadoTorneo: participadoTorneo || 'no',
+          participadoTorneo: participadoTorneo, // Enviamos el valor seleccionado
           aceptaReglas
         }),
       });
@@ -69,6 +102,12 @@ export const GenericGameForm = ({ gameName, onClose }: GenericGameFormProps) => 
       }
 
       toast.success(data.message || `¡Inscripción a ${gameName} enviada exitosamente!`);
+      
+      // Limpiamos el formulario (opcional, pero recomendado)
+      setFormData({ nombre: '', cedula: '', telefono: '', nombreUsuario: '' });
+      setParticipadoTorneo('');
+      setAceptaReglas(false);
+      
       onClose();
 
     } catch (error: any) {

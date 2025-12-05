@@ -83,7 +83,9 @@ export const LeagueOfLegendsForm: React.FC<{ onClose: () => void }> = ({ onClose
     setTeamData(prev => ({ ...prev, logoEquipo: file }));
   };
 
+  // --- LÓGICA DE VALIDACIÓN ---
   const validateForm = () => {
+    // 1. Validar campos básicos del equipo y capitán
     if (!teamData.nombreEquipo.trim()) {
       toast.error('Ingresa el nombre del equipo');
       return false;
@@ -101,14 +103,32 @@ export const LeagueOfLegendsForm: React.FC<{ onClose: () => void }> = ({ onClose
       return false;
     }
     
-    // Validar otros jugadores
+    // 2. Validar que los 4 jugadores tengan todos sus datos
     for (let i = 0; i < players.length; i++) {
       const p = players[i];
-      if (!p.nombre.trim() || !p.rol.trim() || !p.cedula.trim() || !p.nombreInvocador.trim()) {
-        toast.error(`Completa los datos del Jugador ${i + 1}`);
+      if (!p.nombre.trim() || !p.rol || !p.cedula.trim() || !p.nombreInvocador.trim()) {
+        toast.error(`Completa todos los datos del Jugador ${i + 1}`);
         return false;
       }
     }
+
+    // 3. VALIDACIÓN DE ROLES ÚNICOS (La parte importante)
+    // Creamos una lista con el rol del capitán + los roles de los 4 jugadores
+    const teamRoles = [];
+    if (teamData.rolLider) teamRoles.push(teamData.rolLider);
+    players.forEach(p => {
+        if (p.rol) teamRoles.push(p.rol);
+    });
+
+    // Usamos un 'Set' para contar cuántos roles únicos hay
+    const uniqueRoles = new Set(teamRoles);
+
+    // Si el tamaño del Set es menor que la lista, significa que hay repetidos
+    if (uniqueRoles.size !== teamRoles.length) {
+        toast.error('No se pueden repetir roles en el equipo titular (Capitán + 4 Jugadores). Cada posición (Top, Jungle, Mid, ADC, Support) debe ser única.');
+        return false;
+    }
+
     if (!aceptaReglas) {
       toast.error('Debes aceptar las reglas del torneo');
       return false;
@@ -123,14 +143,12 @@ export const LeagueOfLegendsForm: React.FC<{ onClose: () => void }> = ({ onClose
 
     setLoading(true);
     try {
-      // 1. Preparamos el objeto de datos (Texto/JSON)
-      // Nota: No incluimos 'logoEquipo' aquí porque no es texto, va aparte en el FormData
-      const dataPayload = {
+      const payload = {
         nombreEquipo: teamData.nombreEquipo,
         regionServidor: teamData.regionServidor,
         capitan: teamData.capitan,
         rolLider: teamData.rolLider,
-        nombreInvocadorTeam: teamData.nombreInvocador, // Mapeado a lo que espera el Schema
+        nombreInvocadorTeam: teamData.nombreInvocador, // Mapeado
         numeroContacto: teamData.numeroContacto,
         
         jugadores: players,
@@ -140,22 +158,15 @@ export const LeagueOfLegendsForm: React.FC<{ onClose: () => void }> = ({ onClose
         aceptaReglas: aceptaReglas
       };
 
-      // 2. Crear FormData (Esencial para subir archivos)
       const formData = new FormData();
-      
-      // A) Metemos el JSON como un string en el campo 'datos'
-      formData.append('datos', JSON.stringify(dataPayload));
+      formData.append('datos', JSON.stringify(payload));
 
-      // B) Metemos el archivo real si existe
       if (teamData.logoEquipo) {
         formData.append('logoEquipo', teamData.logoEquipo);
       }
 
-      // 3. Enviar al Backend
       const res = await fetch('http://localhost:4000/api/lol/inscripcion', {
         method: 'POST',
-        // IMPORTANTE: No poner headers 'Content-Type'. 
-        // fetch lo detecta automáticamente al ver que el body es FormData.
         body: formData,
       });
 

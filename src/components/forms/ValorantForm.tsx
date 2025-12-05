@@ -21,9 +21,9 @@ export const ValorantForm = ({ onClose }: { onClose: () => void }) => {
     regionServidor: '',
     logoEquipo: null as File | null,
     capitan: '',
-    nombreJugador: '',
+    nombreJugador: '', // Nombre Real del Capitán
     numeroContacto: '',
-    riotId: '',
+    riotId: '', // Riot ID del Capitán
   });
 
   const [players, setPlayers] = useState<PlayerData[]>(
@@ -63,13 +63,62 @@ export const ValorantForm = ({ onClose }: { onClose: () => void }) => {
     setPlayers(newPlayers);
   };
 
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0] || null;
+    setTeamData(prev => ({ ...prev, logoEquipo: file }));
+  };
+
+  // --- VALIDACIONES ---
+  const validateForm = () => {
+    // 1. Validar campos básicos del equipo
+    if (!teamData.nombreEquipo.trim()) return toast.error('Falta el nombre del equipo') && false;
+    if (!teamData.capitan.trim()) return toast.error('Falta el nombre del capitán') && false;
+    if (!teamData.nombreJugador.trim()) return toast.error('Falta el nombre real del capitán') && false;
+    if (!teamData.riotId.trim()) return toast.error('Falta el Riot ID del capitán') && false;
+    if (!teamData.numeroContacto.trim()) return toast.error('Falta el número de contacto') && false;
+
+    // 2. Validar que los 4 jugadores titulares estén completos
+    for (let i = 0; i < players.length; i++) {
+        const p = players[i];
+        if (!p.nombre.trim() || !p.cedula.trim() || !p.riotId.trim()) {
+            toast.error(`Completa todos los datos del Jugador ${i + 1}`);
+            return false;
+        }
+    }
+
+    // 3. VALIDACIÓN DE DUPLICADOS (Riot ID y Cédula)
+    // Recopilamos IDs del Capitán + 4 Jugadores (Suplente y Coach no cuentan para esta validación)
+    const teamRiotIds = [teamData.riotId.trim().toLowerCase()];
+    players.forEach(p => teamRiotIds.push(p.riotId.trim().toLowerCase()));
+
+    // Verificar Riot IDs duplicados
+    const uniqueRiotIds = new Set(teamRiotIds);
+    if (uniqueRiotIds.size !== teamRiotIds.length) {
+        toast.error('Hay Riot IDs repetidos en el equipo titular. Cada jugador debe ser único.');
+        return false;
+    }
+
+    // Verificar Cédulas duplicadas (opcional, pero recomendado)
+    // Asumimos que capitán no tiene campo cédula en el form actual, solo jugadores
+    const teamCedulas = players.map(p => p.cedula.trim());
+    const uniqueCedulas = new Set(teamCedulas);
+    if (uniqueCedulas.size !== teamCedulas.length) {
+        toast.error('Hay números de cédula repetidos entre los jugadores.');
+        return false;
+    }
+
+    if (!aceptaReglas) {
+      toast.error('Debes aceptar las reglas del torneo');
+      return false;
+    }
+
+    return true;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!aceptaReglas) {
-      toast.error('Debes aceptar las reglas del torneo');
-      return;
-    }
+    if (!validateForm()) return;
 
     setLoading(true);
 
@@ -81,7 +130,7 @@ export const ValorantForm = ({ onClose }: { onClose: () => void }) => {
         capitan: teamData.capitan,
         nombreJugador: teamData.nombreJugador,
         numeroContacto: teamData.numeroContacto,
-        riotIdMain: teamData.riotId, // Mapeo correcto al modelo
+        riotIdMain: teamData.riotId, 
         
         jugadores: players,
         suplente: showSuplente ? suplente : null,
@@ -93,11 +142,8 @@ export const ValorantForm = ({ onClose }: { onClose: () => void }) => {
 
       // 2. Crear FormData
       const formData = new FormData();
-      
-      // A) JSON como string en campo 'datos'
       formData.append('datos', JSON.stringify(dataPayload));
 
-      // B) Archivo en campo 'logoEquipo'
       if (teamData.logoEquipo) {
         formData.append('logoEquipo', teamData.logoEquipo);
       }
@@ -105,14 +151,14 @@ export const ValorantForm = ({ onClose }: { onClose: () => void }) => {
       // 3. Enviar
       const res = await fetch('http://localhost:4000/api/valorant/inscripcion', {
         method: 'POST',
-        body: formData, // El navegador se encarga del Content-Type
+        body: formData, 
       });
 
-      const result = await res.json(); // Intentamos parsear siempre para ver el mensaje
+      const result = await res.json().catch(() => null);
 
       if (!res.ok) {
         console.error('Error Valorant API:', result);
-        toast.error(result.msg || 'Error al enviar la inscripción');
+        toast.error(result?.msg || 'Error al enviar la inscripción');
         setLoading(false);
         return;
       }
@@ -165,13 +211,13 @@ export const ValorantForm = ({ onClose }: { onClose: () => void }) => {
               id="logoEquipo"
               type="file"
               accept="image/*"
-              onChange={(e) => setTeamData({ ...teamData, logoEquipo: e.target.files?.[0] || null })}
+              onChange={handleFileChange}
               className="file:bg-primary file:text-primary-foreground file:border-0 file:rounded file:px-2 file:mr-2"
             />
           </div>
           
           <div className="space-y-2">
-            <Label htmlFor="capitan">Capitán del Equipo</Label>
+            <Label htmlFor="capitan">Capitán (Alias/Nick)</Label>
             <Input
               id="capitan"
               value={teamData.capitan}
@@ -181,7 +227,7 @@ export const ValorantForm = ({ onClose }: { onClose: () => void }) => {
           </div>
           
           <div className="space-y-2">
-            <Label htmlFor="nombreJugador">Nombre del Jugador</Label>
+            <Label htmlFor="nombreJugador">Nombre Real del Capitán</Label>
             <Input
               id="nombreJugador"
               value={teamData.nombreJugador}
@@ -202,7 +248,7 @@ export const ValorantForm = ({ onClose }: { onClose: () => void }) => {
           </div>
           
           <div className="space-y-2 md:col-span-2">
-            <Label htmlFor="riotIdTeam">Riot ID (Main)</Label>
+            <Label htmlFor="riotIdTeam">Riot ID del Capitán (Main)</Label>
             <Input
               id="riotIdTeam"
               value={teamData.riotId}
@@ -225,7 +271,7 @@ export const ValorantForm = ({ onClose }: { onClose: () => void }) => {
             <h4 className="font-semibold text-sm text-muted-foreground">Jugador {index + 1}</h4>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
               <div className="space-y-2">
-                <Label>Nombre</Label>
+                <Label>Nombre Real</Label>
                 <Input
                   value={player.nombre}
                   onChange={(e) => updatePlayer(index, 'nombre', e.target.value)}
@@ -270,7 +316,7 @@ export const ValorantForm = ({ onClose }: { onClose: () => void }) => {
             <h4 className="font-semibold text-sm text-muted-foreground">Suplente</h4>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
               <div className="space-y-2">
-                <Label>Nombre</Label>
+                <Label>Nombre Real</Label>
                 <Input
                   value={suplente.nombre}
                   onChange={(e) => setSuplente({ ...suplente, nombre: e.target.value })}
@@ -312,7 +358,7 @@ export const ValorantForm = ({ onClose }: { onClose: () => void }) => {
             <h4 className="font-semibold text-sm text-muted-foreground">Coach</h4>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
               <div className="space-y-2">
-                <Label>Nombre</Label>
+                <Label>Nombre Real</Label>
                 <Input
                   value={coach.nombre}
                   onChange={(e) => setCoach({ ...coach, nombre: e.target.value })}
@@ -377,7 +423,7 @@ export const ValorantForm = ({ onClose }: { onClose: () => void }) => {
           Cancelar
         </Button>
         <Button type="submit" variant="hero" className="flex-1" disabled={loading}>
-          {loading ? 'Enviando...' : 'Enviar Inscripción'}
+          {loading ? 'Inscribiendo...' : 'Enviar Inscripción'}
         </Button>
       </div>
     </form>
