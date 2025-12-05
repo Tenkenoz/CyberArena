@@ -18,7 +18,8 @@ interface TeamData {
   regionServidor: string;
   logoEquipo: File | null;
   capitan: string;
-  nombreJugador: string;
+  rolLider: string;
+  // Se eliminó nombreJugador (Alias/Nick)
   numeroContacto: string;
   nombreInvocador: string;
 }
@@ -26,7 +27,6 @@ interface TeamData {
 const roles = ['Top', 'Jungle', 'Mid', 'ADC', 'Support'];
 
 export const LeagueOfLegendsForm: React.FC<{ onClose: () => void }> = ({ onClose }) => {
-  // Key para forzar el reinicio visual del formulario (especialmente el input file)
   const [formKey, setFormKey] = useState(0);
 
   const [teamData, setTeamData] = useState<TeamData>({
@@ -34,7 +34,7 @@ export const LeagueOfLegendsForm: React.FC<{ onClose: () => void }> = ({ onClose
     regionServidor: '',
     logoEquipo: null,
     capitan: '',
-    nombreJugador: '',
+    rolLider: '',
     numeroContacto: '',
     nombreInvocador: '',
   });
@@ -51,14 +51,13 @@ export const LeagueOfLegendsForm: React.FC<{ onClose: () => void }> = ({ onClose
   const [aceptaReglas, setAceptaReglas] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  // Función para resetear el formulario
   const resetForm = () => {
     setTeamData({
       nombreEquipo: '',
       regionServidor: '',
       logoEquipo: null,
       capitan: '',
-      nombreJugador: '',
+      rolLider: '',
       numeroContacto: '',
       nombreInvocador: '',
     });
@@ -69,7 +68,6 @@ export const LeagueOfLegendsForm: React.FC<{ onClose: () => void }> = ({ onClose
     setShowCoach(false);
     setParticipadoTorneo('');
     setAceptaReglas(false);
-    // Cambiar la key fuerza a React a recrear el componente form, limpiando inputs de archivo
     setFormKey(prev => prev + 1);
   };
 
@@ -87,7 +85,6 @@ export const LeagueOfLegendsForm: React.FC<{ onClose: () => void }> = ({ onClose
   };
 
   const validateForm = () => {
-    // ejemplo simple de validación: verificar campos obligatorios
     if (!teamData.nombreEquipo.trim()) {
       toast.error('Ingresa el nombre del equipo');
       return false;
@@ -96,6 +93,16 @@ export const LeagueOfLegendsForm: React.FC<{ onClose: () => void }> = ({ onClose
       toast.error('Ingresa el nombre del capitán');
       return false;
     }
+    if (!teamData.rolLider) {
+        toast.error('Selecciona el rol del Capitán/Líder');
+        return false;
+    }
+    if (!teamData.nombreInvocador.trim()) {
+      toast.error('Ingresa el nombre de invocador del capitán');
+      return false;
+    }
+    
+    // Validar otros jugadores
     for (let i = 0; i < players.length; i++) {
       const p = players[i];
       if (!p.nombre.trim() || !p.rol.trim() || !p.cedula.trim() || !p.nombreInvocador.trim()) {
@@ -117,16 +124,19 @@ export const LeagueOfLegendsForm: React.FC<{ onClose: () => void }> = ({ onClose
 
     setLoading(true);
     try {
-      // PREPARAMOS EL PAYLOAD JSON (Tu backend espera JSON, no FormData)
       const payload = {
         nombreEquipo: teamData.nombreEquipo,
         regionServidor: teamData.regionServidor,
-        // Enviamos el nombre del archivo como string
         logoURL: teamData.logoEquipo ? teamData.logoEquipo.name : "",
+        
         capitan: teamData.capitan,
-        nombreJugador: teamData.nombreJugador,
+        rolLider: teamData.rolLider,
+        
+        // Eliminado nombreJugador de aquí también
+        
+        nombreInvocadorTeam: teamData.nombreInvocador, // Nombre Invocador (Cuenta LoL)
         numeroContacto: teamData.numeroContacto,
-        nombreInvocadorTeam: teamData.nombreInvocador,
+        
         jugadores: players,
         suplente: showSuplente ? suplente : null,
         coach: showCoach ? coach : null,
@@ -137,28 +147,21 @@ export const LeagueOfLegendsForm: React.FC<{ onClose: () => void }> = ({ onClose
       const res = await fetch('http://localhost:4000/api/lol/inscripcion', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json' // Header obligatorio
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify(payload),
       });
 
       if (!res.ok) {
-        const text = await res.text();
-        console.error('Respuesta no OK:', res.status, text);
-        toast.error('Error al enviar los datos');
+        const data = await res.json().catch(() => null);
+        toast.error(data?.msg || 'Error al enviar los datos');
         setLoading(false);
         return;
       }
 
-      // --- ÉXITO ---
-      // El backend no devuelve JSON en todos los casos según tu código original, 
-      // pero si status es ok, procedemos.
-      const data = await res.json().catch(() => null);
-
-      toast.success('Registro Exitoso'); // <--- MENSAJE AGREGADO
-      resetForm(); // <--- LIMPIAR FORMULARIO
-      
-      onClose(); // Cerrar modal si aplica
+      toast.success('Registro de Equipo LoL Exitoso');
+      resetForm();
+      onClose();
     } catch (error) {
       console.error(error);
       toast.error('Error de conexión con la API');
@@ -208,8 +211,9 @@ export const LeagueOfLegendsForm: React.FC<{ onClose: () => void }> = ({ onClose
             />
           </div>
 
+          {/* DATOS DEL CAPITÁN */}
           <div className="space-y-2">
-            <Label htmlFor="capitan">Capitán del Equipo</Label>
+            <Label htmlFor="capitan">Capitán del Equipo (Nombre Real)</Label>
             <Input
               id="capitan"
               value={teamData.capitan}
@@ -218,15 +222,22 @@ export const LeagueOfLegendsForm: React.FC<{ onClose: () => void }> = ({ onClose
             />
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="nombreJugador">Nombre del Jugador</Label>
-            <Input
-              id="nombreJugador"
-              value={teamData.nombreJugador}
-              onChange={(e) => setTeamData({ ...teamData, nombreJugador: e.target.value })}
+           {/* ROL DEL LÍDER */}
+           <div className="space-y-2">
+            <Label htmlFor="rolLider">Rol del Capitán</Label>
+            <select
+              id="rolLider"
+              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              value={teamData.rolLider}
+              onChange={(e) => setTeamData({ ...teamData, rolLider: e.target.value })}
               required
-            />
+            >
+              <option value="">Seleccionar rol</option>
+              {roles.map(rol => <option key={rol} value={rol}>{rol}</option>)}
+            </select>
           </div>
+
+          {/* SE ELIMINÓ EL INPUT DE ALIAS/NICK AQUÍ */}
 
           <div className="space-y-2">
             <Label htmlFor="numeroContacto">Número de Contacto</Label>
@@ -240,7 +251,7 @@ export const LeagueOfLegendsForm: React.FC<{ onClose: () => void }> = ({ onClose
           </div>
 
           <div className="space-y-2 md:col-span-2">
-            <Label htmlFor="nombreInvocadorTeam">Nombre de Invocador</Label>
+            <Label htmlFor="nombreInvocadorTeam">Nombre de Invocador (Cuenta LoL)</Label>
             <Input
               id="nombreInvocadorTeam"
               value={teamData.nombreInvocador}
@@ -254,8 +265,9 @@ export const LeagueOfLegendsForm: React.FC<{ onClose: () => void }> = ({ onClose
       {/* Jugadores */}
       <div className="space-y-4">
         <h3 className="font-display text-xl font-bold text-primary border-b border-border pb-2">
-          Jugadores (4)
+          Compañeros de Equipo (4)
         </h3>
+        <p className="text-sm text-muted-foreground">Ingresa los datos de los otros 4 integrantes.</p>
 
         {players.map((player, index) => (
           <div key={index} className="p-4 bg-muted/50 rounded-lg space-y-3">
@@ -306,7 +318,7 @@ export const LeagueOfLegendsForm: React.FC<{ onClose: () => void }> = ({ onClose
         ))}
       </div>
 
-      {/* Suplente (Opcional) */}
+      {/* Suplente y Coach (Igual que antes) */}
       <div className="space-y-4">
         <div className="flex items-center gap-2">
           <Checkbox
@@ -362,7 +374,6 @@ export const LeagueOfLegendsForm: React.FC<{ onClose: () => void }> = ({ onClose
         )}
       </div>
 
-      {/* Coach (Opcional) */}
       <div className="space-y-4">
         <div className="flex items-center gap-2">
           <Checkbox
