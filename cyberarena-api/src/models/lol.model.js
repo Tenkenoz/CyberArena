@@ -11,13 +11,13 @@ const lolSchema = new mongoose.Schema(
   {
     nombreEquipo: String,
     regionServidor: String,
-    logoURL: String,
+    logoURL: String, // Aquí guardaremos el link de Cloudinary
     
     // Datos del Capitán/Líder
     capitan: String,
-    rolLider: String, // <--- NUEVO CAMPO AGREGADO
+    rolLider: String, 
     numeroContacto: String,
-    nombreInvocadorTeam: String, // Asegúrate de que coincida con el frontend (allí usas nombreInvocadorTeam en el payload)
+    nombreInvocadorTeam: String, 
 
     jugadores: [playerSchema], // Los otros 4 jugadores
     suplente: playerSchema,

@@ -8,11 +8,13 @@
     "start": "node src/server.js"
   },
   "dependencies": {
+    "cloudinary": "^1.41.3",
     "cors": "^2.8.5",
-    "dotenv": "^16.4.5",
+    "dotenv": "^16.6.1",
     "express": "^4.18.2",
     "mongoose": "^7.6.0",
-    "multer": "^2.0.2"
+    "multer": "^2.0.2",
+    "multer-storage-cloudinary": "^4.0.0"
   },
   "devDependencies": {
     "nodemon": "^3.0.2"

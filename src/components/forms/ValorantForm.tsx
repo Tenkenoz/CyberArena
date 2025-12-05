@@ -13,7 +13,6 @@ interface PlayerData {
 }
 
 export const ValorantForm = ({ onClose }: { onClose: () => void }) => {
-  // Key para reiniciar inputs visualmente (ej. input file)
   const [formKey, setFormKey] = useState(0);
   const [loading, setLoading] = useState(false);
 
@@ -75,15 +74,14 @@ export const ValorantForm = ({ onClose }: { onClose: () => void }) => {
     setLoading(true);
 
     try {
-      // Preparamos el payload JSON para la API de Valorant
-      const payload = {
+      // 1. Preparar datos JSON
+      const dataPayload = {
         nombreEquipo: teamData.nombreEquipo,
         regionServidor: teamData.regionServidor,
-        logoURL: teamData.logoEquipo ? teamData.logoEquipo.name : "", // Enviamos string
         capitan: teamData.capitan,
         nombreJugador: teamData.nombreJugador,
         numeroContacto: teamData.numeroContacto,
-        riotIdMain: teamData.riotId, // Mapeamos al campo del modelo
+        riotIdMain: teamData.riotId, // Mapeo correcto al modelo
         
         jugadores: players,
         suplente: showSuplente ? suplente : null,
@@ -93,18 +91,28 @@ export const ValorantForm = ({ onClose }: { onClose: () => void }) => {
         aceptaReglas: aceptaReglas
       };
 
+      // 2. Crear FormData
+      const formData = new FormData();
+      
+      // A) JSON como string en campo 'datos'
+      formData.append('datos', JSON.stringify(dataPayload));
+
+      // B) Archivo en campo 'logoEquipo'
+      if (teamData.logoEquipo) {
+        formData.append('logoEquipo', teamData.logoEquipo);
+      }
+
+      // 3. Enviar
       const res = await fetch('http://localhost:4000/api/valorant/inscripcion', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(payload),
+        body: formData, // El navegador se encarga del Content-Type
       });
 
+      const result = await res.json(); // Intentamos parsear siempre para ver el mensaje
+
       if (!res.ok) {
-        const text = await res.text();
-        console.error('Error Valorant API:', text);
-        toast.error('Error al enviar la inscripción');
+        console.error('Error Valorant API:', result);
+        toast.error(result.msg || 'Error al enviar la inscripción');
         setLoading(false);
         return;
       }
@@ -330,7 +338,7 @@ export const ValorantForm = ({ onClose }: { onClose: () => void }) => {
         )}
       </div>
 
-      {/* Participación previa */}
+      {/* Información Adicional */}
       <div className="space-y-4">
         <h3 className="font-display text-xl font-bold text-primary border-b border-border pb-2">
           Información Adicional
@@ -369,7 +377,7 @@ export const ValorantForm = ({ onClose }: { onClose: () => void }) => {
           Cancelar
         </Button>
         <Button type="submit" variant="hero" className="flex-1" disabled={loading}>
-          {loading ? 'Inscribiendo...' : 'Enviar Inscripción'}
+          {loading ? 'Enviando...' : 'Enviar Inscripción'}
         </Button>
       </div>
     </form>

@@ -1,31 +1,44 @@
 import mongoose from "mongoose";
 
-// Esquema para jugadores (Sin rol, ya que tu form de Valorant no lo pide)
+// Esquema para jugadores (Sin rol, ya que Valorant usa Agentes que se eligen en partida)
 const valoPlayerSchema = new mongoose.Schema({
   nombre: String,
   cedula: String,
-  riotId: String // En Valorant se usa Riot ID en vez de Nombre de Invocador
+  riotId: String // En Valorant se usa Riot ID (Nombre#TAG)
 });
 
 const valorantSchema = new mongoose.Schema(
   {
-    nombreEquipo: String,
+    nombreEquipo: {
+        type: String,
+        required: true,
+        trim: true
+    },
     regionServidor: String,
-    logoURL: String, // Guardaremos el nombre del archivo
+    
+    // Aquí se guardará la URL segura de Cloudinary (https://res.cloudinary.com/...)
+    logoURL: String, 
+    
     capitan: String,
-    nombreJugador: String, // Campo extra que tienes en el form
+    nombreJugador: String, // El nombre/alias del capitán
     numeroContacto: String,
-    riotIdMain: String, // El Riot ID del capitán o contacto principal
+    riotIdMain: String, // El Riot ID principal de contacto
 
-    jugadores: [valoPlayerSchema], // Array de 4 jugadores
-    suplente: valoPlayerSchema,
-    coach: valoPlayerSchema,
+    // Arrays y Objetos anidados
+    jugadores: [valoPlayerSchema], // Los 4 titulares adicionales
+    suplente: valoPlayerSchema,    // Opcional
+    coach: valoPlayerSchema,       // Opcional
 
     participadoTorneo: String,
-    aceptaReglas: Boolean
+    aceptaReglas: Boolean,
+    
+    fechaRegistro: {
+        type: Date,
+        default: Date.now
+    }
   },
   {
-    collection: "Valorant" // Nombre de la colección en MongoDB
+    collection: "Valorant" // Nombre exacto de la colección en Mongo
   }
 );
 

@@ -19,7 +19,6 @@ interface TeamData {
   logoEquipo: File | null;
   capitan: string;
   rolLider: string;
-  // Se eliminó nombreJugador (Alias/Nick)
   numeroContacto: string;
   nombreInvocador: string;
 }
@@ -94,8 +93,8 @@ export const LeagueOfLegendsForm: React.FC<{ onClose: () => void }> = ({ onClose
       return false;
     }
     if (!teamData.rolLider) {
-        toast.error('Selecciona el rol del Capitán/Líder');
-        return false;
+      toast.error('Selecciona el rol del Capitán/Líder');
+      return false;
     }
     if (!teamData.nombreInvocador.trim()) {
       toast.error('Ingresa el nombre de invocador del capitán');
@@ -124,17 +123,14 @@ export const LeagueOfLegendsForm: React.FC<{ onClose: () => void }> = ({ onClose
 
     setLoading(true);
     try {
-      const payload = {
+      // 1. Preparamos el objeto de datos (Texto/JSON)
+      // Nota: No incluimos 'logoEquipo' aquí porque no es texto, va aparte en el FormData
+      const dataPayload = {
         nombreEquipo: teamData.nombreEquipo,
         regionServidor: teamData.regionServidor,
-        logoURL: teamData.logoEquipo ? teamData.logoEquipo.name : "",
-        
         capitan: teamData.capitan,
         rolLider: teamData.rolLider,
-        
-        // Eliminado nombreJugador de aquí también
-        
-        nombreInvocadorTeam: teamData.nombreInvocador, // Nombre Invocador (Cuenta LoL)
+        nombreInvocadorTeam: teamData.nombreInvocador, // Mapeado a lo que espera el Schema
         numeroContacto: teamData.numeroContacto,
         
         jugadores: players,
@@ -144,22 +140,34 @@ export const LeagueOfLegendsForm: React.FC<{ onClose: () => void }> = ({ onClose
         aceptaReglas: aceptaReglas
       };
 
+      // 2. Crear FormData (Esencial para subir archivos)
+      const formData = new FormData();
+      
+      // A) Metemos el JSON como un string en el campo 'datos'
+      formData.append('datos', JSON.stringify(dataPayload));
+
+      // B) Metemos el archivo real si existe
+      if (teamData.logoEquipo) {
+        formData.append('logoEquipo', teamData.logoEquipo);
+      }
+
+      // 3. Enviar al Backend
       const res = await fetch('http://localhost:4000/api/lol/inscripcion', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(payload),
+        // IMPORTANTE: No poner headers 'Content-Type'. 
+        // fetch lo detecta automáticamente al ver que el body es FormData.
+        body: formData,
       });
 
+      const data = await res.json().catch(() => null);
+
       if (!res.ok) {
-        const data = await res.json().catch(() => null);
         toast.error(data?.msg || 'Error al enviar los datos');
         setLoading(false);
         return;
       }
 
-      toast.success('Registro de Equipo LoL Exitoso');
+      toast.success('¡Registro de Equipo LoL Exitoso!');
       resetForm();
       onClose();
     } catch (error) {
@@ -236,8 +244,6 @@ export const LeagueOfLegendsForm: React.FC<{ onClose: () => void }> = ({ onClose
               {roles.map(rol => <option key={rol} value={rol}>{rol}</option>)}
             </select>
           </div>
-
-          {/* SE ELIMINÓ EL INPUT DE ALIAS/NICK AQUÍ */}
 
           <div className="space-y-2">
             <Label htmlFor="numeroContacto">Número de Contacto</Label>
@@ -318,7 +324,7 @@ export const LeagueOfLegendsForm: React.FC<{ onClose: () => void }> = ({ onClose
         ))}
       </div>
 
-      {/* Suplente y Coach (Igual que antes) */}
+      {/* Suplente y Coach */}
       <div className="space-y-4">
         <div className="flex items-center gap-2">
           <Checkbox
