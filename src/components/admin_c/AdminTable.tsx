@@ -36,7 +36,6 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import RefreshIcon from "@mui/icons-material/Refresh";
 import SaveIcon from "@mui/icons-material/Save";
 import CancelIcon from "@mui/icons-material/Cancel";
-import PersonIcon from "@mui/icons-material/Person";
 import PhoneIcon from "@mui/icons-material/Phone";
 import SportsEsportsIcon from "@mui/icons-material/SportsEsports";
 import BadgeIcon from "@mui/icons-material/Badge";
@@ -47,6 +46,24 @@ import AccountCircleIcon from "@mui/icons-material/AccountCircle";
 import LoginIcon from "@mui/icons-material/Login";
 
 import { toast } from "sonner";
+
+// =========================
+// CONFIGURACIÓN DE API PARA VERCEL
+// =========================
+const getApiUrl = () => {
+  // Soporte para Vite
+  if (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_API_URL) {
+    return import.meta.env.VITE_API_URL;
+  }
+  // Soporte para Next.js
+  if (typeof process !== 'undefined' && process.env.NEXT_PUBLIC_API_URL) {
+    return process.env.NEXT_PUBLIC_API_URL;
+  }
+  // Fallback para desarrollo local
+  return 'http://localhost:4000';
+};
+
+const API_BASE_URL = getApiUrl();
 
 // =========================
 // INTERFACES
@@ -61,39 +78,40 @@ const ROLES_LOL = ['Top', 'Jungle', 'Mid', 'ADC', 'Support'];
 // =========================
 // CONFIGURACIÓN DE JUEGOS
 // =========================
+// Ahora usamos API_BASE_URL para las rutas
 const juegosConfig = {
   "League of Legends": { 
     id: "lol", 
-    api: "http://localhost:4000/api/lol",
-    deleteUpdateUrl: (id: string) => `http://localhost:4000/api/lol/${id}`,
+    api: `${API_BASE_URL}/api/lol`,
+    deleteUpdateUrl: (id: string) => `${API_BASE_URL}/api/lol/${id}`,
     type: "team",
     color: "#00b0f4" 
   },
   "Valorant": { 
     id: "valorant", 
-    api: "http://localhost:4000/api/valorant",
-    deleteUpdateUrl: (id: string) => `http://localhost:4000/api/valorant/${id}`,
+    api: `${API_BASE_URL}/api/valorant`,
+    deleteUpdateUrl: (id: string) => `${API_BASE_URL}/api/valorant/${id}`,
     type: "team",
     color: "#ff4655"
   },
   "Teamfight Tactics": { 
     id: "tft", 
-    api: "http://localhost:4000/api/tft/inscritos", 
-    deleteUpdateUrl: (id: string) => `http://localhost:4000/api/tft/inscritos/${id}`,
+    api: `${API_BASE_URL}/api/tft/inscritos`, 
+    deleteUpdateUrl: (id: string) => `${API_BASE_URL}/api/tft/inscritos/${id}`,
     type: "individual",
     color: "#f5a623"
   },
   "Chess.com": { 
     id: "chess", 
-    api: "http://localhost:4000/api/chess/inscritos", 
-    deleteUpdateUrl: (id: string) => `http://localhost:4000/api/chess/inscritos/${id}`,
+    api: `${API_BASE_URL}/api/chess/inscritos`, 
+    deleteUpdateUrl: (id: string) => `${API_BASE_URL}/api/chess/inscritos/${id}`,
     type: "individual",
     color: "#7fa650"
   },
   "Clash Royale": { 
     id: "clash-royale", 
-    api: "http://localhost:4000/api/clash-royale/inscritos", 
-    deleteUpdateUrl: (id: string) => `http://localhost:4000/api/clash-royale/inscritos/${id}`,
+    api: `${API_BASE_URL}/api/clash-royale/inscritos`, 
+    deleteUpdateUrl: (id: string) => `${API_BASE_URL}/api/clash-royale/inscritos/${id}`,
     type: "individual",
     color: "#4a8df8"
   },
@@ -118,11 +136,12 @@ export const AdminTable = () => {
   // Estado para visualización de imagen
   const [previewImage, setPreviewImage] = useState<string | null>(null);
 
-  // Helper para imágenes
+  // Helper para imágenes: Usamos la URL base dinámica
   const getImageUrl = (path: string) => {
     if (!path) return "";
     if (path.startsWith("http")) return path;
-    return `http://localhost:4000/${path.replace(/\\/g, "/")}`;
+    // Reemplaza backslashes por slashes y añade la base URL
+    return `${API_BASE_URL}/${path.replace(/\\/g, "/")}`;
   };
 
   // =========================
@@ -527,11 +546,11 @@ export const AdminTable = () => {
                             )}
                         </Stack>
                     </Box>
-                ) : undefined} // <-- ESTO DESACTIVA EL PANEL EN INDIVIDUALES
+                ) : undefined}
             />
         )}
 
-        {/* Modales (Imagen y Edición) - Se mantienen igual */}
+        {/* Modales (Imagen y Edición) */}
         <Dialog open={!!previewImage} onClose={() => setPreviewImage(null)} maxWidth="md">
             <DialogContent sx={{ p: 0, bgcolor: 'black', display: 'flex', justifyContent: 'center' }}>
                 <img src={previewImage || ""} alt="Full Size" style={{ maxWidth: '100%', maxHeight: '80vh', objectFit: 'contain' }} />

@@ -6,6 +6,24 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from 'sonner';
 
+// --- CONFIGURACIÓN DE API PARA VERCEL ---
+// Detecta la URL de la API según el entorno.
+// En Vercel, asegúrate de configurar 'VITE_API_URL' o 'NEXT_PUBLIC_API_URL'.
+const getApiUrl = () => {
+  // Soporte para Vite
+  if (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_API_URL) {
+    return import.meta.env.VITE_API_URL;
+  }
+  // Soporte para Next.js
+  if (typeof process !== 'undefined' && process.env.NEXT_PUBLIC_API_URL) {
+    return process.env.NEXT_PUBLIC_API_URL;
+  }
+  // Fallback para desarrollo local
+  return 'http://localhost:4000';
+};
+
+const API_BASE_URL = getApiUrl();
+
 interface GenericGameFormProps {
   gameName: string;
   onClose: () => void;
@@ -32,7 +50,7 @@ export const GenericGameForm = ({ gameName, onClose }: GenericGameFormProps) => 
   const [aceptaReglas, setAceptaReglas] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  // --- NUEVA FUNCIÓN DE VALIDACIÓN ---
+  // --- FUNCIÓN DE VALIDACIÓN ---
   const validateForm = () => {
     // 1. Validar campos de texto
     if (!formData.nombre.trim()) {
@@ -82,15 +100,15 @@ export const GenericGameForm = ({ gameName, onClose }: GenericGameFormProps) => 
     setLoading(true);
 
     try {
-      // Conexión real a tu API de Cyber Arena
-      const response = await fetch(`http://localhost:4000/api/${gameId}/inscripcion`, {
+      // Usamos la constante dinámica en lugar de localhost hardcodeado
+      const response = await fetch(`${API_BASE_URL}/api/${gameId}/inscripcion`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           ...formData,
-          participadoTorneo: participadoTorneo, // Enviamos el valor seleccionado
+          participadoTorneo: participadoTorneo,
           aceptaReglas
         }),
       });
@@ -103,7 +121,7 @@ export const GenericGameForm = ({ gameName, onClose }: GenericGameFormProps) => 
 
       toast.success(data.message || `¡Inscripción a ${gameName} enviada exitosamente!`);
       
-      // Limpiamos el formulario (opcional, pero recomendado)
+      // Limpiamos el formulario
       setFormData({ nombre: '', cedula: '', telefono: '', nombreUsuario: '' });
       setParticipadoTorneo('');
       setAceptaReglas(false);
@@ -134,6 +152,7 @@ export const GenericGameForm = ({ gameName, onClose }: GenericGameFormProps) => 
               onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
               required
               disabled={loading}
+              placeholder="Nombre Completo"
             />
           </div>
           
@@ -145,6 +164,7 @@ export const GenericGameForm = ({ gameName, onClose }: GenericGameFormProps) => 
               onChange={(e) => setFormData({ ...formData, cedula: e.target.value })}
               required
               disabled={loading}
+              placeholder="Ej: 123456789"
             />
           </div>
           
@@ -157,6 +177,7 @@ export const GenericGameForm = ({ gameName, onClose }: GenericGameFormProps) => 
               onChange={(e) => setFormData({ ...formData, telefono: e.target.value })}
               required
               disabled={loading}
+              placeholder="+57 300 123 4567"
             />
           </div>
           
@@ -166,7 +187,7 @@ export const GenericGameForm = ({ gameName, onClose }: GenericGameFormProps) => 
               id="nombreUsuario"
               value={formData.nombreUsuario}
               onChange={(e) => setFormData({ ...formData, nombreUsuario: e.target.value })}
-              placeholder={`Tu ID o nombre en ${gameName}`}
+              placeholder={`Tu ID o Gamertag`}
               required
               disabled={loading}
             />
@@ -204,7 +225,7 @@ export const GenericGameForm = ({ gameName, onClose }: GenericGameFormProps) => 
           disabled={loading}
         />
         <Label htmlFor="aceptaReglas" className="cursor-pointer text-sm">
-          Acepto las <a href="#" className="text-primary hover:underline">reglas del torneo</a> y confirmo que toda la información proporcionada es correcta.
+          Acepto las <a href="#" className="text-primary hover:underline font-medium">reglas del torneo</a> y confirmo que toda la información proporcionada es correcta.
         </Label>
       </div>
 
@@ -212,7 +233,7 @@ export const GenericGameForm = ({ gameName, onClose }: GenericGameFormProps) => 
         <Button type="button" variant="outline" onClick={onClose} className="flex-1" disabled={loading}>
           Cancelar
         </Button>
-        <Button type="submit" variant="hero" className="flex-1" disabled={loading}>
+        <Button type="submit" className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white" disabled={loading}>
           {loading ? 'Enviando...' : 'Enviar Inscripción'}
         </Button>
       </div>

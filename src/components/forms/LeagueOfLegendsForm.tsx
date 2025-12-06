@@ -6,6 +6,22 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from 'sonner';
 
+// --- CONFIGURACIÓN DE API PARA VERCEL ---
+const getApiUrl = () => {
+  // Soporte para Vite
+  if (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_API_URL) {
+    return import.meta.env.VITE_API_URL;
+  }
+  // Soporte para Next.js
+  if (typeof process !== 'undefined' && process.env.NEXT_PUBLIC_API_URL) {
+    return process.env.NEXT_PUBLIC_API_URL;
+  }
+  // Fallback para desarrollo local
+  return 'http://localhost:4000';
+};
+
+const API_BASE_URL = getApiUrl();
+
 interface PlayerData {
   nombre: string;
   rol: string;
@@ -148,6 +164,11 @@ export const LeagueOfLegendsForm: React.FC<{ onClose: () => void }> = ({ onClose
         return false;
     }
 
+    if (!participadoTorneo) {
+        toast.error('Por favor indica si han participado en torneos anteriormente.');
+        return false;
+    }
+
     if (!aceptaReglas) {
       toast.error('Debes aceptar las reglas del torneo');
       return false;
@@ -184,9 +205,12 @@ export const LeagueOfLegendsForm: React.FC<{ onClose: () => void }> = ({ onClose
         formData.append('logoEquipo', teamData.logoEquipo);
       }
 
-      const res = await fetch('http://localhost:4000/api/lol/inscripcion', {
+      // Usamos la URL dinámica aquí
+      const res = await fetch(`${API_BASE_URL}/api/lol/inscripcion`, {
         method: 'POST',
         body: formData,
+        // Nota: No establecemos 'Content-Type' manualmente cuando usamos FormData,
+        // el navegador lo hace automáticamente incluyendo el boundary.
       });
 
       const data = await res.json().catch(() => null);
@@ -224,6 +248,7 @@ export const LeagueOfLegendsForm: React.FC<{ onClose: () => void }> = ({ onClose
               value={teamData.nombreEquipo}
               onChange={(e) => setTeamData({ ...teamData, nombreEquipo: e.target.value })}
               required
+              disabled={loading}
             />
           </div>
 
@@ -235,6 +260,7 @@ export const LeagueOfLegendsForm: React.FC<{ onClose: () => void }> = ({ onClose
               onChange={(e) => setTeamData({ ...teamData, regionServidor: e.target.value })}
               placeholder="LAN, LAS, NA, etc."
               required
+              disabled={loading}
             />
           </div>
 
@@ -247,6 +273,7 @@ export const LeagueOfLegendsForm: React.FC<{ onClose: () => void }> = ({ onClose
               accept="image/png, image/jpeg, image/jpg"
               onChange={handleFileChange}
               className="file:bg-primary file:text-primary-foreground file:border-0 file:rounded file:px-2 file:mr-2"
+              disabled={loading}
             />
           </div>
 
@@ -258,6 +285,7 @@ export const LeagueOfLegendsForm: React.FC<{ onClose: () => void }> = ({ onClose
               value={teamData.capitan}
               onChange={(e) => setTeamData({ ...teamData, capitan: e.target.value })}
               required
+              disabled={loading}
             />
           </div>
 
@@ -270,6 +298,7 @@ export const LeagueOfLegendsForm: React.FC<{ onClose: () => void }> = ({ onClose
               value={teamData.rolLider}
               onChange={(e) => setTeamData({ ...teamData, rolLider: e.target.value })}
               required
+              disabled={loading}
             >
               <option value="">Seleccionar rol</option>
               {roles.map(rol => <option key={rol} value={rol}>{rol}</option>)}
@@ -284,6 +313,7 @@ export const LeagueOfLegendsForm: React.FC<{ onClose: () => void }> = ({ onClose
               value={teamData.numeroContacto}
               onChange={(e) => setTeamData({ ...teamData, numeroContacto: e.target.value })}
               required
+              disabled={loading}
             />
           </div>
 
@@ -294,6 +324,7 @@ export const LeagueOfLegendsForm: React.FC<{ onClose: () => void }> = ({ onClose
               value={teamData.nombreInvocador}
               onChange={(e) => setTeamData({ ...teamData, nombreInvocador: e.target.value })}
               required
+              disabled={loading}
             />
           </div>
         </div>
@@ -317,6 +348,7 @@ export const LeagueOfLegendsForm: React.FC<{ onClose: () => void }> = ({ onClose
                   value={player.nombre}
                   onChange={(e) => updatePlayer(index, 'nombre', e.target.value)}
                   required
+                  disabled={loading}
                 />
               </div>
               <div className="space-y-2">
@@ -327,6 +359,7 @@ export const LeagueOfLegendsForm: React.FC<{ onClose: () => void }> = ({ onClose
                   value={player.rol}
                   onChange={(e) => updatePlayer(index, 'rol', e.target.value)}
                   required
+                  disabled={loading}
                 >
                   <option value="">Seleccionar rol</option>
                   {roles.map(rol => <option key={rol} value={rol}>{rol}</option>)}
@@ -339,6 +372,7 @@ export const LeagueOfLegendsForm: React.FC<{ onClose: () => void }> = ({ onClose
                   value={player.cedula}
                   onChange={(e) => updatePlayer(index, 'cedula', e.target.value)}
                   required
+                  disabled={loading}
                 />
               </div>
               <div className="space-y-2">
@@ -348,6 +382,7 @@ export const LeagueOfLegendsForm: React.FC<{ onClose: () => void }> = ({ onClose
                   value={player.nombreInvocador}
                   onChange={(e) => updatePlayer(index, 'nombreInvocador', e.target.value)}
                   required
+                  disabled={loading}
                 />
               </div>
             </div>
@@ -355,13 +390,14 @@ export const LeagueOfLegendsForm: React.FC<{ onClose: () => void }> = ({ onClose
         ))}
       </div>
 
-      {/* Suplente y Coach (Igual que antes) */}
+      {/* Suplente y Coach */}
       <div className="space-y-4">
         <div className="flex items-center gap-2">
           <Checkbox
             id="showSuplente"
             checked={showSuplente}
             onCheckedChange={(checked) => setShowSuplente(Boolean(checked))}
+            disabled={loading}
           />
           <Label htmlFor="showSuplente" className="cursor-pointer">Agregar Suplente (Opcional)</Label>
         </div>
@@ -376,6 +412,7 @@ export const LeagueOfLegendsForm: React.FC<{ onClose: () => void }> = ({ onClose
                   id="suplente-nombre"
                   value={suplente.nombre}
                   onChange={(e) => setSuplente({ ...suplente, nombre: e.target.value })}
+                  disabled={loading}
                 />
               </div>
               <div className="space-y-2">
@@ -385,6 +422,7 @@ export const LeagueOfLegendsForm: React.FC<{ onClose: () => void }> = ({ onClose
                   className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                   value={suplente.rol}
                   onChange={(e) => setSuplente({ ...suplente, rol: e.target.value })}
+                  disabled={loading}
                 >
                   <option value="">Seleccionar rol</option>
                   {roles.map(rol => <option key={rol} value={rol}>{rol}</option>)}
@@ -396,6 +434,7 @@ export const LeagueOfLegendsForm: React.FC<{ onClose: () => void }> = ({ onClose
                   id="suplente-cedula"
                   value={suplente.cedula}
                   onChange={(e) => setSuplente({ ...suplente, cedula: e.target.value })}
+                  disabled={loading}
                 />
               </div>
               <div className="space-y-2">
@@ -404,6 +443,7 @@ export const LeagueOfLegendsForm: React.FC<{ onClose: () => void }> = ({ onClose
                   id="suplente-invocador"
                   value={suplente.nombreInvocador}
                   onChange={(e) => setSuplente({ ...suplente, nombreInvocador: e.target.value })}
+                  disabled={loading}
                 />
               </div>
             </div>
@@ -417,6 +457,7 @@ export const LeagueOfLegendsForm: React.FC<{ onClose: () => void }> = ({ onClose
             id="showCoach"
             checked={showCoach}
             onCheckedChange={(checked) => setShowCoach(Boolean(checked))}
+            disabled={loading}
           />
           <Label htmlFor="showCoach" className="cursor-pointer">Agregar Coach (Opcional)</Label>
         </div>
@@ -431,6 +472,7 @@ export const LeagueOfLegendsForm: React.FC<{ onClose: () => void }> = ({ onClose
                   id="coach-nombre"
                   value={coach.nombre}
                   onChange={(e) => setCoach({ ...coach, nombre: e.target.value })}
+                  disabled={loading}
                 />
               </div>
               <div className="space-y-2">
@@ -440,6 +482,7 @@ export const LeagueOfLegendsForm: React.FC<{ onClose: () => void }> = ({ onClose
                   value={coach.rol}
                   onChange={(e) => setCoach({ ...coach, rol: e.target.value })}
                   placeholder="Coach"
+                  disabled={loading}
                 />
               </div>
               <div className="space-y-2">
@@ -448,6 +491,7 @@ export const LeagueOfLegendsForm: React.FC<{ onClose: () => void }> = ({ onClose
                   id="coach-cedula"
                   value={coach.cedula}
                   onChange={(e) => setCoach({ ...coach, cedula: e.target.value })}
+                  disabled={loading}
                 />
               </div>
               <div className="space-y-2">
@@ -456,6 +500,7 @@ export const LeagueOfLegendsForm: React.FC<{ onClose: () => void }> = ({ onClose
                   id="coach-invocador"
                   value={coach.nombreInvocador}
                   onChange={(e) => setCoach({ ...coach, nombreInvocador: e.target.value })}
+                  disabled={loading}
                 />
               </div>
             </div>
@@ -471,7 +516,12 @@ export const LeagueOfLegendsForm: React.FC<{ onClose: () => void }> = ({ onClose
 
         <div className="space-y-3">
           <Label>¿Han participado en otro torneo?</Label>
-          <RadioGroup value={participadoTorneo} onValueChange={setParticipadoTorneo} className="flex gap-6">
+          <RadioGroup 
+            value={participadoTorneo} 
+            onValueChange={setParticipadoTorneo} 
+            className="flex gap-6"
+            disabled={loading}
+          >
             <div className="flex items-center space-x-2">
               <RadioGroupItem value="si" id="torneo-si" />
               <Label htmlFor="torneo-si" className="cursor-pointer">Sí</Label>
@@ -490,6 +540,7 @@ export const LeagueOfLegendsForm: React.FC<{ onClose: () => void }> = ({ onClose
           id="aceptaReglas"
           checked={aceptaReglas}
           onCheckedChange={(checked) => setAceptaReglas(Boolean(checked))}
+          disabled={loading}
         />
         <Label htmlFor="aceptaReglas" className="cursor-pointer text-sm">
           Acepto las <a href="#" className="text-primary hover:underline">reglas del torneo</a> y confirmo que toda la información proporcionada es correcta.
@@ -500,7 +551,11 @@ export const LeagueOfLegendsForm: React.FC<{ onClose: () => void }> = ({ onClose
         <Button type="button" variant="outline" onClick={onClose} className="flex-1" disabled={loading}>
           Cancelar
         </Button>
-        <Button type="submit" variant="hero" className="flex-1" disabled={loading}>
+        <Button 
+            type="submit" 
+            className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white" 
+            disabled={loading}
+        >
           {loading ? 'Enviando...' : 'Enviar Inscripción'}
         </Button>
       </div>

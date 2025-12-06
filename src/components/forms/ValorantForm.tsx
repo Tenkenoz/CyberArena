@@ -6,6 +6,22 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from 'sonner';
 
+// --- CONFIGURACIÓN DE API PARA VERCEL ---
+const getApiUrl = () => {
+  // Soporte para Vite
+  if (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_API_URL) {
+    return import.meta.env.VITE_API_URL;
+  }
+  // Soporte para Next.js
+  if (typeof process !== 'undefined' && process.env.NEXT_PUBLIC_API_URL) {
+    return process.env.NEXT_PUBLIC_API_URL;
+  }
+  // Fallback para desarrollo local
+  return 'http://localhost:4000';
+};
+
+const API_BASE_URL = getApiUrl();
+
 interface PlayerData {
   nombre: string;
   cedula: string;
@@ -126,6 +142,11 @@ export const ValorantForm = ({ onClose }: { onClose: () => void }) => {
         return false;
     }
 
+    if (!participadoTorneo) {
+        toast.error('Por favor indica si han participado en torneos anteriormente.');
+        return false;
+    }
+
     if (!aceptaReglas) {
       toast.error('Debes aceptar las reglas del torneo');
       return false;
@@ -167,8 +188,8 @@ export const ValorantForm = ({ onClose }: { onClose: () => void }) => {
         formData.append('logoEquipo', teamData.logoEquipo);
       }
 
-      // 3. Enviar
-      const res = await fetch('http://localhost:4000/api/valorant/inscripcion', {
+      // 3. Enviar (Usando URL dinámica)
+      const res = await fetch(`${API_BASE_URL}/api/valorant/inscripcion`, {
         method: 'POST',
         body: formData, 
       });
@@ -210,6 +231,7 @@ export const ValorantForm = ({ onClose }: { onClose: () => void }) => {
               value={teamData.nombreEquipo}
               onChange={(e) => setTeamData({ ...teamData, nombreEquipo: e.target.value })}
               required
+              disabled={loading}
             />
           </div>
           
@@ -221,6 +243,7 @@ export const ValorantForm = ({ onClose }: { onClose: () => void }) => {
               onChange={(e) => setTeamData({ ...teamData, regionServidor: e.target.value })}
               placeholder="LATAM, NA, etc."
               required
+              disabled={loading}
             />
           </div>
           
@@ -232,6 +255,7 @@ export const ValorantForm = ({ onClose }: { onClose: () => void }) => {
               accept="image/png, image/jpeg, image/jpg"
               onChange={handleFileChange}
               className="file:bg-primary file:text-primary-foreground file:border-0 file:rounded file:px-2 file:mr-2"
+              disabled={loading}
             />
           </div>
           
@@ -242,6 +266,7 @@ export const ValorantForm = ({ onClose }: { onClose: () => void }) => {
               value={teamData.capitan}
               onChange={(e) => setTeamData({ ...teamData, capitan: e.target.value })}
               required
+              disabled={loading}
             />
           </div>
           
@@ -252,6 +277,7 @@ export const ValorantForm = ({ onClose }: { onClose: () => void }) => {
               value={teamData.nombreJugador}
               onChange={(e) => setTeamData({ ...teamData, nombreJugador: e.target.value })}
               required
+              disabled={loading}
             />
           </div>
           
@@ -263,6 +289,7 @@ export const ValorantForm = ({ onClose }: { onClose: () => void }) => {
               value={teamData.numeroContacto}
               onChange={(e) => setTeamData({ ...teamData, numeroContacto: e.target.value })}
               required
+              disabled={loading}
             />
           </div>
           
@@ -274,6 +301,7 @@ export const ValorantForm = ({ onClose }: { onClose: () => void }) => {
               onChange={(e) => setTeamData({ ...teamData, riotId: e.target.value })}
               placeholder="Nombre#TAG"
               required
+              disabled={loading}
             />
           </div>
         </div>
@@ -295,6 +323,7 @@ export const ValorantForm = ({ onClose }: { onClose: () => void }) => {
                   value={player.nombre}
                   onChange={(e) => updatePlayer(index, 'nombre', e.target.value)}
                   required
+                  disabled={loading}
                 />
               </div>
               <div className="space-y-2">
@@ -303,6 +332,7 @@ export const ValorantForm = ({ onClose }: { onClose: () => void }) => {
                   value={player.cedula}
                   onChange={(e) => updatePlayer(index, 'cedula', e.target.value)}
                   required
+                  disabled={loading}
                 />
               </div>
               <div className="space-y-2">
@@ -312,6 +342,7 @@ export const ValorantForm = ({ onClose }: { onClose: () => void }) => {
                   onChange={(e) => updatePlayer(index, 'riotId', e.target.value)}
                   placeholder="Nombre#TAG"
                   required
+                  disabled={loading}
                 />
               </div>
             </div>
@@ -326,6 +357,7 @@ export const ValorantForm = ({ onClose }: { onClose: () => void }) => {
             id="showSuplente"
             checked={showSuplente}
             onCheckedChange={(checked) => setShowSuplente(checked as boolean)}
+            disabled={loading}
           />
           <Label htmlFor="showSuplente" className="cursor-pointer">Agregar Suplente (Opcional)</Label>
         </div>
@@ -339,6 +371,7 @@ export const ValorantForm = ({ onClose }: { onClose: () => void }) => {
                 <Input
                   value={suplente.nombre}
                   onChange={(e) => setSuplente({ ...suplente, nombre: e.target.value })}
+                  disabled={loading}
                 />
               </div>
               <div className="space-y-2">
@@ -346,6 +379,7 @@ export const ValorantForm = ({ onClose }: { onClose: () => void }) => {
                 <Input
                   value={suplente.cedula}
                   onChange={(e) => setSuplente({ ...suplente, cedula: e.target.value })}
+                  disabled={loading}
                 />
               </div>
               <div className="space-y-2">
@@ -354,6 +388,7 @@ export const ValorantForm = ({ onClose }: { onClose: () => void }) => {
                   value={suplente.riotId}
                   onChange={(e) => setSuplente({ ...suplente, riotId: e.target.value })}
                   placeholder="Nombre#TAG"
+                  disabled={loading}
                 />
               </div>
             </div>
@@ -368,6 +403,7 @@ export const ValorantForm = ({ onClose }: { onClose: () => void }) => {
             id="showCoach"
             checked={showCoach}
             onCheckedChange={(checked) => setShowCoach(checked as boolean)}
+            disabled={loading}
           />
           <Label htmlFor="showCoach" className="cursor-pointer">Agregar Coach (Opcional)</Label>
         </div>
@@ -381,6 +417,7 @@ export const ValorantForm = ({ onClose }: { onClose: () => void }) => {
                 <Input
                   value={coach.nombre}
                   onChange={(e) => setCoach({ ...coach, nombre: e.target.value })}
+                  disabled={loading}
                 />
               </div>
               <div className="space-y-2">
@@ -388,6 +425,7 @@ export const ValorantForm = ({ onClose }: { onClose: () => void }) => {
                 <Input
                   value={coach.cedula}
                   onChange={(e) => setCoach({ ...coach, cedula: e.target.value })}
+                  disabled={loading}
                 />
               </div>
               <div className="space-y-2">
@@ -396,6 +434,7 @@ export const ValorantForm = ({ onClose }: { onClose: () => void }) => {
                   value={coach.riotId}
                   onChange={(e) => setCoach({ ...coach, riotId: e.target.value })}
                   placeholder="Nombre#TAG"
+                  disabled={loading}
                 />
               </div>
             </div>
@@ -411,7 +450,12 @@ export const ValorantForm = ({ onClose }: { onClose: () => void }) => {
         
         <div className="space-y-3">
           <Label>¿Han participado en otro torneo?</Label>
-          <RadioGroup value={participadoTorneo} onValueChange={setParticipadoTorneo} className="flex gap-6">
+          <RadioGroup 
+            value={participadoTorneo} 
+            onValueChange={setParticipadoTorneo} 
+            className="flex gap-6"
+            disabled={loading}
+          >
             <div className="flex items-center space-x-2">
               <RadioGroupItem value="si" id="torneo-si" />
               <Label htmlFor="torneo-si" className="cursor-pointer">Sí</Label>
@@ -431,6 +475,7 @@ export const ValorantForm = ({ onClose }: { onClose: () => void }) => {
           checked={aceptaReglas}
           onCheckedChange={(checked) => setAceptaReglas(checked as boolean)}
           required
+          disabled={loading}
         />
         <Label htmlFor="aceptaReglas" className="cursor-pointer text-sm">
           Acepto las <a href="#" className="text-primary hover:underline">reglas del torneo</a> y confirmo que toda la información proporcionada es correcta.
@@ -441,7 +486,11 @@ export const ValorantForm = ({ onClose }: { onClose: () => void }) => {
         <Button type="button" variant="outline" onClick={onClose} className="flex-1" disabled={loading}>
           Cancelar
         </Button>
-        <Button type="submit" variant="hero" className="flex-1" disabled={loading}>
+        <Button 
+            type="submit" 
+            className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white" 
+            disabled={loading}
+        >
           {loading ? 'Enviando...' : 'Enviar Inscripción'}
         </Button>
       </div>
