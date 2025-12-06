@@ -148,7 +148,7 @@ export const AdminTable = () => {
   // =========================
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    if (authCreds.user === 'admin' && authCreds.pass === '123') {
+    if (authCreds.user === 'admin' && authCreds.pass === 'OpenHub2025!') {
         setIsAuthenticated(true);
         toast.success("Bienvenido Administrador");
     } else {
