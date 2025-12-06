@@ -63,21 +63,42 @@ export const ValorantForm = ({ onClose }: { onClose: () => void }) => {
     setPlayers(newPlayers);
   };
 
+  // --- VALIDACIÓN DE IMAGEN ---
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0] || null;
+    
+    if (file) {
+        // 1. Validar Tipo de Archivo
+        const validTypes = ['image/jpeg', 'image/png', 'image/jpg'];
+        if (!validTypes.includes(file.type)) {
+            toast.error('Formato no válido. Solo se aceptan imágenes JPG o PNG.');
+            e.target.value = ''; // Limpiar input
+            setTeamData(prev => ({ ...prev, logoEquipo: null }));
+            return;
+        }
+
+        // 2. Validar Tamaño (Máx 5MB)
+        if (file.size > 5 * 1024 * 1024) {
+            toast.error('La imagen es demasiado pesada. Máximo 5MB.');
+            e.target.value = '';
+            setTeamData(prev => ({ ...prev, logoEquipo: null }));
+            return;
+        }
+    }
+
     setTeamData(prev => ({ ...prev, logoEquipo: file }));
   };
 
-  // --- VALIDACIONES ---
+  // --- VALIDACIONES DEL FORMULARIO ---
   const validateForm = () => {
-    // 1. Validar campos básicos del equipo
-    if (!teamData.nombreEquipo.trim()) return toast.error('Falta el nombre del equipo') && false;
-    if (!teamData.capitan.trim()) return toast.error('Falta el nombre del capitán') && false;
-    if (!teamData.nombreJugador.trim()) return toast.error('Falta el nombre real del capitán') && false;
-    if (!teamData.riotId.trim()) return toast.error('Falta el Riot ID del capitán') && false;
-    if (!teamData.numeroContacto.trim()) return toast.error('Falta el número de contacto') && false;
+    // 1. Campos del Equipo y Capitán
+    if (!teamData.nombreEquipo.trim()) return toast.error('Ingresa el nombre del equipo') && false;
+    if (!teamData.capitan.trim()) return toast.error('Ingresa el alias del capitán') && false;
+    if (!teamData.nombreJugador.trim()) return toast.error('Ingresa el nombre real del capitán') && false;
+    if (!teamData.riotId.trim()) return toast.error('Ingresa el Riot ID del capitán') && false;
+    if (!teamData.numeroContacto.trim()) return toast.error('Ingresa un número de contacto') && false;
 
-    // 2. Validar que los 4 jugadores titulares estén completos
+    // 2. Datos de Jugadores
     for (let i = 0; i < players.length; i++) {
         const p = players[i];
         if (!p.nombre.trim() || !p.cedula.trim() || !p.riotId.trim()) {
@@ -86,23 +107,21 @@ export const ValorantForm = ({ onClose }: { onClose: () => void }) => {
         }
     }
 
-    // 3. VALIDACIÓN DE DUPLICADOS (Riot ID y Cédula)
-    // Recopilamos IDs del Capitán + 4 Jugadores (Suplente y Coach no cuentan para esta validación)
-    const teamRiotIds = [teamData.riotId.trim().toLowerCase()];
-    players.forEach(p => teamRiotIds.push(p.riotId.trim().toLowerCase()));
+    // 3. VALIDACIÓN DE DUPLICADOS (Riot IDs)
+    // Unimos Riot ID del Capitán + Riot IDs de jugadores
+    const allRiotIds = [teamData.riotId.trim().toLowerCase()];
+    players.forEach(p => allRiotIds.push(p.riotId.trim().toLowerCase()));
 
-    // Verificar Riot IDs duplicados
-    const uniqueRiotIds = new Set(teamRiotIds);
-    if (uniqueRiotIds.size !== teamRiotIds.length) {
-        toast.error('Hay Riot IDs repetidos en el equipo titular. Cada jugador debe ser único.');
+    const uniqueRiotIds = new Set(allRiotIds);
+    if (uniqueRiotIds.size !== allRiotIds.length) {
+        toast.error('Hay Riot IDs repetidos en el equipo. Cada jugador debe ser único.');
         return false;
     }
 
-    // Verificar Cédulas duplicadas (opcional, pero recomendado)
-    // Asumimos que capitán no tiene campo cédula en el form actual, solo jugadores
-    const teamCedulas = players.map(p => p.cedula.trim());
-    const uniqueCedulas = new Set(teamCedulas);
-    if (uniqueCedulas.size !== teamCedulas.length) {
+    // 4. VALIDACIÓN DE DUPLICADOS (Cédulas Jugadores)
+    const allCedulas = players.map(p => p.cedula.trim());
+    const uniqueCedulas = new Set(allCedulas);
+    if (uniqueCedulas.size !== allCedulas.length) {
         toast.error('Hay números de cédula repetidos entre los jugadores.');
         return false;
     }
@@ -206,11 +225,11 @@ export const ValorantForm = ({ onClose }: { onClose: () => void }) => {
           </div>
           
           <div className="space-y-2">
-            <Label htmlFor="logoEquipo">Logo del Equipo</Label>
+            <Label htmlFor="logoEquipo">Logo del Equipo (JPG/PNG)</Label>
             <Input
               id="logoEquipo"
               type="file"
-              accept="image/*"
+              accept="image/png, image/jpeg, image/jpg"
               onChange={handleFileChange}
               className="file:bg-primary file:text-primary-foreground file:border-0 file:rounded file:px-2 file:mr-2"
             />
@@ -423,7 +442,7 @@ export const ValorantForm = ({ onClose }: { onClose: () => void }) => {
           Cancelar
         </Button>
         <Button type="submit" variant="hero" className="flex-1" disabled={loading}>
-          {loading ? 'Inscribiendo...' : 'Enviar Inscripción'}
+          {loading ? 'Enviando...' : 'Enviar Inscripción'}
         </Button>
       </div>
     </form>

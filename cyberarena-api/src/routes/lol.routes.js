@@ -132,6 +132,16 @@ router.get("/:id", async (req, res) => {
     return res.status(500).json({ ok: false, msg: "Error al buscar" });
   }
 });
+router.put("/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const actualizado = await Lol.findByIdAndUpdate(id, req.body, { new: true });
+    if (!actualizado) return res.status(404).json({ ok: false, msg: "No encontrado" });
+    return res.json({ ok: true, msg: "Actualizado", data: actualizado });
+  } catch (err) {
+    return res.status(500).json({ ok: false, msg: "Error al actualizar" });
+  }
+});
 
 // --- DELETE (Eliminar) ---
 router.delete("/:id", async (req, res) => {

@@ -78,12 +78,34 @@ export const LeagueOfLegendsForm: React.FC<{ onClose: () => void }> = ({ onClose
     });
   };
 
+  // --- VALIDACIÓN DE IMAGEN ---
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0] ?? null;
+    
+    if (file) {
+        // Validamos el tipo MIME del archivo
+        const validTypes = ['image/jpeg', 'image/png', 'image/jpg'];
+        if (!validTypes.includes(file.type)) {
+            toast.error('Formato no permitido. Solo se aceptan imágenes JPG o PNG.');
+            
+            // Limpiamos el input para que el usuario pueda intentar de nuevo
+            e.target.value = ''; 
+            setTeamData(prev => ({ ...prev, logoEquipo: null }));
+            return;
+        }
+
+        // Opcional: Validar tamaño (ej. máx 5MB)
+        if (file.size > 5 * 1024 * 1024) {
+            toast.error('La imagen es muy pesada. El tamaño máximo es 5MB.');
+            e.target.value = '';
+            setTeamData(prev => ({ ...prev, logoEquipo: null }));
+            return;
+        }
+    }
+
     setTeamData(prev => ({ ...prev, logoEquipo: file }));
   };
 
-  // --- LÓGICA DE VALIDACIÓN ---
   const validateForm = () => {
     // 1. Validar campos básicos del equipo y capitán
     if (!teamData.nombreEquipo.trim()) {
@@ -112,20 +134,17 @@ export const LeagueOfLegendsForm: React.FC<{ onClose: () => void }> = ({ onClose
       }
     }
 
-    // 3. VALIDACIÓN DE ROLES ÚNICOS (La parte importante)
-    // Creamos una lista con el rol del capitán + los roles de los 4 jugadores
+    // 3. VALIDACIÓN DE ROLES ÚNICOS
     const teamRoles = [];
     if (teamData.rolLider) teamRoles.push(teamData.rolLider);
     players.forEach(p => {
         if (p.rol) teamRoles.push(p.rol);
     });
 
-    // Usamos un 'Set' para contar cuántos roles únicos hay
     const uniqueRoles = new Set(teamRoles);
 
-    // Si el tamaño del Set es menor que la lista, significa que hay repetidos
     if (uniqueRoles.size !== teamRoles.length) {
-        toast.error('No se pueden repetir roles en el equipo titular (Capitán + 4 Jugadores). Cada posición (Top, Jungle, Mid, ADC, Support) debe ser única.');
+        toast.error('No se pueden repetir roles en el equipo titular (Capitán + 4 Jugadores). Cada posición debe ser única.');
         return false;
     }
 
@@ -148,7 +167,7 @@ export const LeagueOfLegendsForm: React.FC<{ onClose: () => void }> = ({ onClose
         regionServidor: teamData.regionServidor,
         capitan: teamData.capitan,
         rolLider: teamData.rolLider,
-        nombreInvocadorTeam: teamData.nombreInvocador, // Mapeado
+        nombreInvocadorTeam: teamData.nombreInvocador,
         numeroContacto: teamData.numeroContacto,
         
         jugadores: players,
@@ -220,11 +239,12 @@ export const LeagueOfLegendsForm: React.FC<{ onClose: () => void }> = ({ onClose
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="logoEquipo">Logo del Equipo</Label>
+            <Label htmlFor="logoEquipo">Logo del Equipo (JPG/PNG)</Label>
             <Input
               id="logoEquipo"
               type="file"
-              accept="image/*"
+              // Agregamos filtro nativo del navegador
+              accept="image/png, image/jpeg, image/jpg"
               onChange={handleFileChange}
               className="file:bg-primary file:text-primary-foreground file:border-0 file:rounded file:px-2 file:mr-2"
             />
@@ -335,7 +355,7 @@ export const LeagueOfLegendsForm: React.FC<{ onClose: () => void }> = ({ onClose
         ))}
       </div>
 
-      {/* Suplente y Coach */}
+      {/* Suplente y Coach (Igual que antes) */}
       <div className="space-y-4">
         <div className="flex items-center gap-2">
           <Checkbox
