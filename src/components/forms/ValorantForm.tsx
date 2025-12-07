@@ -506,12 +506,12 @@ export const ValorantForm = ({ onClose }: { onClose: () => void }) => {
             <CreditCard className="w-5 h-5" /> Información de Pago
         </h3>
         
-        <div className="bg-blue-50 dark:bg-blue-950/30 p-4 rounded-md text-sm space-y-1 border border-blue-100 dark:border-blue-900">
+       <div className="bg-blue-50 dark:bg-blue-950/30 p-4 rounded-md text-sm space-y-1 border border-blue-100 dark:border-blue-900">
             <p className="font-semibold text-blue-800 dark:text-blue-300">Banco Pichincha</p>
-            <p><strong>Nombre:</strong> José Sanmartín</p>
-            <p><strong>CI:</strong> 1727585729</p>
-            <p><strong>Cuenta de Ahorro Transaccional:</strong> 2206570945</p>
-            <p><strong>Email:</strong> josesanmartin1999@hotmail.com</p>
+            <p className='text-black dark:text-white'><strong>Nombre:</strong> José Sanmartín</p>
+            <p className='text-black dark:text-white'><strong>CI:</strong> 1727585729</p>
+            <p className='text-black dark:text-white'><strong>Cuenta de Ahorro Transaccional:</strong> 2206570945</p>
+            <p className='text-black dark:text-white'><strong>Email:</strong> josesanmartin1999@hotmail.com</p>
         </div>
 
         <div className="flex items-start space-x-2 py-2">
