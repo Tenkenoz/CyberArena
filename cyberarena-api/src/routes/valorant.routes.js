@@ -1,5 +1,6 @@
 import express from "express";
-import Valorant from "../models/valorant.model.js"; // Ajustado para coincidir con tu archivo de modelo
+// Mantenemos tu importación tal cual me la pasaste
+import Valorant from "../models/valorant.model.js"; 
 import multer from "multer";
 import { v2 as cloudinary } from 'cloudinary';
 import dotenv from 'dotenv';
@@ -16,7 +17,7 @@ cloudinary.config({
 });
 
 // --- 2. CONFIGURACIÓN DE MULTER (Memoria) ---
-// Usamos memoria para poder redirigir dinámicamente a diferentes carpetas en Cloudinary
+// Usamos memoria para tener control total y poder subir a diferentes carpetas
 const storage = multer.memoryStorage();
 const upload = multer({ 
     storage: storage,
@@ -37,7 +38,7 @@ const uploadToCloudinary = async (fileBuffer, folder) => {
     });
 };
 
-// Configuración para recibir múltiples campos de archivo
+// Configuración para recibir DOS archivos distintos
 const uploadFields = upload.fields([
     { name: 'logoEquipo', maxCount: 1 }, 
     { name: 'comprobante', maxCount: 1 }
@@ -46,7 +47,7 @@ const uploadFields = upload.fields([
 // --- RUTA POST: INSCRIBIR EQUIPO ---
 router.post("/inscripcion", uploadFields, async (req, res) => {
   try {
-    // 1. Parsear los datos JSON que vienen como string dentro del FormData
+    // 1. Procesar el JSON que viene en el campo 'datos'
     let bodyData = {};
     if (req.body.datos) {
         try {
@@ -78,15 +79,14 @@ router.post("/inscripcion", uploadFields, async (req, res) => {
         });
     }
 
-    // 3. Subida de Archivos (Si existen)
+    // 3. Subida de Archivos
     let logoUrl = null;
     let comprobanteUrl = null;
 
-    // A) Subir Logo del Equipo
+    // A) Subir Logo del Equipo (si existe) -> Carpeta valorant-logos
     if (req.files && req.files['logoEquipo']) {
         try {
             const file = req.files['logoEquipo'][0];
-            // Guardamos el logo en la carpeta de logos
             logoUrl = await uploadToCloudinary(file.buffer, 'cyber-arena/valorant-logos');
         } catch (error) {
             console.error("Error subiendo logo:", error);
@@ -94,11 +94,10 @@ router.post("/inscripcion", uploadFields, async (req, res) => {
         }
     }
 
-    // B) Subir Comprobante de Pago
+    // B) Subir Comprobante de Pago (si existe) -> Carpeta comprobantes/valorant
     if (req.files && req.files['comprobante']) {
         try {
             const file = req.files['comprobante'][0];
-            // Guardamos el comprobante en la carpeta de comprobantes
             comprobanteUrl = await uploadToCloudinary(file.buffer, 'cyber-arena/comprobantes/valorant');
         } catch (error) {
             console.error("Error subiendo comprobante:", error);
@@ -111,7 +110,7 @@ router.post("/inscripcion", uploadFields, async (req, res) => {
         ...bodyData,
         logoURL: logoUrl,
         comprobantePago: comprobanteUrl,
-        // Aseguramos que el booleano se guarde correctamente
+        // Convertimos a booleano explícito por seguridad
         pagoRealizado: bodyData.pagoRealizado === true || bodyData.pagoRealizado === 'true'
     });
 
@@ -199,16 +198,12 @@ router.delete("/:id", async (req, res) => {
       return res.status(404).json({ ok: false, msg: "Equipo no encontrado para eliminar" });
     }
 
-    // Opcional: Lógica para borrar imágenes de Cloudinary (Logos y Comprobantes)
+    // Opcional: Lógica para borrar imágenes de Cloudinary
     const deleteImage = async (url) => {
         if (url && url.includes('cloudinary')) {
             try {
-                // Extracción básica del public_id
-                const urlParts = url.split('/');
-                const filename = urlParts.pop().split('.')[0];
-                const folder = urlParts.pop(); // ej: valorant-logos
-                // Para borrar necesitamos el public_id completo si está en subcarpetas
-                // const publicId = `cyber-arena/${folder}/${filename}`; 
+                // Lógica de borrado (simplificada)
+                // const publicId = ...
                 // await cloudinary.uploader.destroy(publicId);
             } catch (e) {
                 console.error("Error borrando imagen Cloudinary:", e);
@@ -216,7 +211,6 @@ router.delete("/:id", async (req, res) => {
         }
     };
     
-    // No bloqueamos la respuesta si falla el borrado de imagen
     deleteImage(eliminado.logoURL);
     deleteImage(eliminado.comprobantePago);
 

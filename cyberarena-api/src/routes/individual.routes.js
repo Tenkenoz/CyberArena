@@ -2,7 +2,7 @@ import express from 'express';
 import mongoose from 'mongoose';
 import multer from 'multer';
 import { v2 as cloudinary } from 'cloudinary';
-// Asegúrate de que la ruta del modelo sea correcta según tu estructura de archivos
+// CORRECCIÓN FINAL: El nombre coincide exactamente con tu captura de pantalla
 import { individualSchema } from '../models/individual.model.js'; 
 
 const router = express.Router();
@@ -15,7 +15,6 @@ cloudinary.config({
 });
 
 // --- CONFIGURACIÓN DE MULTER (Memoria) ---
-// Guardamos el archivo en memoria RAM temporalmente para subirlo a Cloudinary
 const storage = multer.memoryStorage();
 const upload = multer({ 
     storage,
@@ -42,17 +41,16 @@ const getGameModel = (gameId) => {
             throw new Error('Juego no soportado');
     }
 
-    // Usamos el esquema importado
+    // Usamos el esquema importado para crear/recuperar el modelo
     return mongoose.models[collectionName] || mongoose.model(collectionName, individualSchema, collectionName);
 };
 
 // --- CREAR (Inscripción con Imagen) ---
-// Agregamos el middleware 'upload.single' para procesar la imagen 'comprobante'
 router.post('/:gameId/inscripcion', upload.single('comprobante'), async (req, res) => {
     try {
         const { gameId } = req.params;
-        // Obtenemos los campos de texto del body
-        const { nombre, cedula, telefono, nombreUsuario, participadoTorneo, aceptaReglas, pagoRealizado } = req.body;
+        
+        console.log(`📝 Recibida inscripción para ${gameId}`);
 
         if (!VALID_GAMES.includes(gameId)) {
             return res.status(400).json({ 
@@ -60,6 +58,8 @@ router.post('/:gameId/inscripcion', upload.single('comprobante'), async (req, re
                 message: 'Juego no válido para inscripción individual.' 
             });
         }
+
+        const { nombre, cedula, telefono, nombreUsuario, participadoTorneo, aceptaReglas, pagoRealizado } = req.body;
 
         const GameModel = getGameModel(gameId);
 
@@ -82,11 +82,12 @@ router.post('/:gameId/inscripcion', upload.single('comprobante'), async (req, re
                 const dataURI = "data:" + req.file.mimetype + ";base64," + b64;
                 
                 const result = await cloudinary.uploader.upload(dataURI, {
-                    folder: `comprobantes/${gameId}`, // Organizamos por carpetas
+                    folder: `cyber-arena/comprobantes/${gameId}`,
                     resource_type: 'auto'
                 });
                 
                 comprobanteUrl = result.secure_url;
+                console.log("✅ Comprobante subido:", comprobanteUrl);
             } catch (uploadError) {
                 console.error('Error subiendo imagen a Cloudinary:', uploadError);
                 return res.status(500).json({ 
@@ -104,9 +105,9 @@ router.post('/:gameId/inscripcion', upload.single('comprobante'), async (req, re
             telefono,
             nombreUsuario,
             participadoTorneo,
-            aceptaReglas: aceptaReglas === 'true' || aceptaReglas === true, // Asegurar booleano
-            pagoRealizado: pagoRealizado === 'true' || pagoRealizado === true, // Asegurar booleano
-            comprobantePago: comprobanteUrl // Guardamos la URL
+            aceptaReglas: aceptaReglas === 'true' || aceptaReglas === true,
+            pagoRealizado: pagoRealizado === 'true' || pagoRealizado === true,
+            comprobantePago: comprobanteUrl
         });
 
         await nuevaInscripcion.save();
@@ -119,15 +120,17 @@ router.post('/:gameId/inscripcion', upload.single('comprobante'), async (req, re
 
     } catch (error) {
         console.error('Error en inscripción individual:', error);
+        
         if (error.code === 11000) {
             return res.status(400).json({ 
                 success: false, 
                 message: 'Ya existe un registro con esta cédula para este torneo.' 
             });
         }
+        
         res.status(500).json({ 
             success: false, 
-            message: 'Error del servidor.' 
+            message: 'Error del servidor: ' + error.message 
         });
     }
 });

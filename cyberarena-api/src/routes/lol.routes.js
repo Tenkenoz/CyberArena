@@ -1,5 +1,6 @@
 import express from "express";
-import Lol from "../models/lol.model.js"; // Asegúrate que coincida con el nombre del archivo del modelo
+// VERIFICA: Si tu archivo se llama "lol.model.js", cambia esto. Si se llama "Lol.js", déjalo así.
+import Lol from "../models/lol.model.js"; 
 import multer from "multer";
 import { v2 as cloudinary } from 'cloudinary';
 import dotenv from 'dotenv';
@@ -16,11 +17,11 @@ cloudinary.config({
 });
 
 // --- 2. CONFIGURACIÓN DE MULTER (Memoria) ---
-// Usamos memoria para poder decidir dinámicamente en qué carpeta de Cloudinary guardar cada archivo
+// Usamos memoria para poder decidir dinámicamente dónde guardar cada archivo
 const storage = multer.memoryStorage();
 const upload = multer({ 
     storage: storage,
-    limits: { fileSize: 5 * 1024 * 1024 } // Límite de 5MB por archivo
+    limits: { fileSize: 5 * 1024 * 1024 } // 5MB
 });
 
 // --- FUNCIÓN AUXILIAR PARA SUBIR A CLOUDINARY ---
@@ -37,16 +38,16 @@ const uploadToCloudinary = async (fileBuffer, folder) => {
     });
 };
 
-// --- RUTA POST: INSCRIBIR EQUIPO ---
-// Aceptamos dos archivos: 'logoEquipo' y 'comprobante'
+// Configuración para recibir DOS archivos distintos
 const uploadFields = upload.fields([
     { name: 'logoEquipo', maxCount: 1 }, 
     { name: 'comprobante', maxCount: 1 }
 ]);
 
+// --- RUTA POST: INSCRIBIR EQUIPO ---
 router.post("/inscripcion", uploadFields, async (req, res) => {
   try {
-    // 1. PROCESAR EL JSON (datos)
+    // 1. Procesar el JSON
     let bodyData = {};
     if (req.body.datos) {
         try {
@@ -60,7 +61,7 @@ router.post("/inscripcion", uploadFields, async (req, res) => {
 
     console.log("📝 Datos LoL recibidos:", bodyData.nombreEquipo);
     
-    // 2. VALIDACIONES BÁSICAS
+    // 2. Validaciones
     const { nombreEquipo } = bodyData;
     if (!nombreEquipo) {
          return res.status(400).json({ ok: false, msg: "El nombre del equipo es obligatorio." });
@@ -73,47 +74,47 @@ router.post("/inscripcion", uploadFields, async (req, res) => {
     if (existe) {
         return res.status(400).json({
             ok: false,
-            msg: `El nombre de equipo '${nombreEquipo}' ya está ocupado. Por favor elige otro.`
+            msg: `El nombre de equipo '${nombreEquipo}' ya está ocupado.`
         });
     }
 
-    // 3. SUBIDA DE ARCHIVOS (Si existen)
+    // 3. Subida de Archivos
     let logoUrl = null;
     let comprobanteUrl = null;
 
-    // A) Subir Logo del Equipo (si se envió)
+    // A) Subir Logo (si existe) -> Carpeta lol-logos
     if (req.files && req.files['logoEquipo']) {
         try {
             const file = req.files['logoEquipo'][0];
             logoUrl = await uploadToCloudinary(file.buffer, 'cyber-arena/lol-logos');
         } catch (error) {
             console.error("Error subiendo logo:", error);
-            return res.status(500).json({ ok: false, msg: "Error al subir el logo del equipo" });
+            return res.status(500).json({ ok: false, msg: "Error al subir el logo" });
         }
     }
 
-    // B) Subir Comprobante de Pago (si se envió)
+    // B) Subir Comprobante (si existe) -> Carpeta comprobantes/lol
     if (req.files && req.files['comprobante']) {
         try {
             const file = req.files['comprobante'][0];
             comprobanteUrl = await uploadToCloudinary(file.buffer, 'cyber-arena/comprobantes/lol');
         } catch (error) {
             console.error("Error subiendo comprobante:", error);
-            return res.status(500).json({ ok: false, msg: "Error al subir el comprobante de pago" });
+            return res.status(500).json({ ok: false, msg: "Error al subir el comprobante" });
         }
     }
 
-    // 4. GUARDAR EN MONGODB
+    // 4. Guardar en MongoDB
     const nuevo = new Lol({
         ...bodyData,
-        logoURL: logoUrl, // URL de Cloudinary o null
-        comprobantePago: comprobanteUrl, // URL de Cloudinary o null
-        // Aseguramos que pagoRealizado sea booleano
+        logoURL: logoUrl, 
+        comprobantePago: comprobanteUrl,
+        // Convertimos a booleano explícito
         pagoRealizado: bodyData.pagoRealizado === true || bodyData.pagoRealizado === 'true'
     });
 
     await nuevo.save();
-    console.log("✅ Equipo LoL guardado:", nuevo.nombreEquipo);
+    console.log("✅ Equipo guardado:", nuevo.nombreEquipo);
 
     return res.json({
       ok: true,
@@ -123,20 +124,14 @@ router.post("/inscripcion", uploadFields, async (req, res) => {
 
   } catch (err) {
     console.error("❌ ERROR BACKEND LOL:", err);
-    
     if (err.code === 11000) {
-        return res.status(400).json({ ok: false, msg: "Datos duplicados en la base de datos." });
+        return res.status(400).json({ ok: false, msg: "Datos duplicados." });
     }
-
-    return res.status(500).json({ 
-        ok: false, 
-        msg: "Error procesando la inscripción", 
-        error: err.message 
-    });
+    return res.status(500).json({ ok: false, msg: "Error procesando la inscripción", error: err.message });
   }
 });
 
-// --- GET (Leer todos) ---
+// --- RUTA GET (Leer todos) ---
 router.get("/", async (req, res) => {
   try {
     const inscritos = await Lol.find().sort({ fechaRegistro: -1 }); 
@@ -146,7 +141,7 @@ router.get("/", async (req, res) => {
   }
 });
 
-// --- GET (Leer uno) ---
+// --- RUTA GET (Leer uno) ---
 router.get("/:id", async (req, res) => {
   try {
     const { id } = req.params;
@@ -158,7 +153,7 @@ router.get("/:id", async (req, res) => {
   }
 });
 
-// --- PUT (Actualizar) ---
+// --- RUTA PUT (Actualizar) ---
 router.put("/:id", async (req, res) => {
   try {
     const { id } = req.params;
@@ -170,42 +165,13 @@ router.put("/:id", async (req, res) => {
   }
 });
 
-// --- DELETE (Eliminar) ---
+// --- RUTA DELETE (Eliminar) ---
 router.delete("/:id", async (req, res) => {
   try {
     const { id } = req.params;
     const eliminado = await Lol.findByIdAndDelete(id);
-
-    if (!eliminado) {
-      return res.status(404).json({ ok: false, msg: "No encontrado para eliminar" });
-    }
-
-    // Opcional: Borrar imágenes asociadas de Cloudinary
-    // (Esta lógica es básica, idealmente se extrae el public_id correctamente)
-    const deleteImage = async (url) => {
-        if (url && url.includes('cloudinary')) {
-            try {
-                const urlParts = url.split('/');
-                const filename = urlParts.pop().split('.')[0];
-                const folder = urlParts.pop(); // ej: lol-logos o comprobantes
-                // Ajuste para rutas más profundas si es necesario (ej: cyber-arena/lol-logos)
-                // Esto depende de cómo Cloudinary devuelva la URL, a veces es más complejo.
-                // Para simplificar en producción, se suele guardar el public_id en la BD.
-            } catch (e) {
-                console.error("Error borrando imagen:", e);
-            }
-        }
-    };
-
-    // Intentamos borrar (sin bloquear la respuesta si falla)
-    deleteImage(eliminado.logoURL);
-    deleteImage(eliminado.comprobantePago);
-
-    return res.json({
-      ok: true,
-      msg: "Inscripción eliminada correctamente",
-      data: eliminado
-    });
+    if (!eliminado) return res.status(404).json({ ok: false, msg: "No encontrado" });
+    return res.json({ ok: true, msg: "Eliminado", data: eliminado });
   } catch (err) {
     return res.status(500).json({ ok: false, msg: "Error al eliminar" });
   }
