@@ -11,7 +11,7 @@ const lolSchema = new mongoose.Schema(
   {
     nombreEquipo: String,
     regionServidor: String,
-    logoURL: String, // Aquí guardaremos el link de Cloudinary
+    logoURL: String, // Link de Cloudinary del logo del equipo
     
     // Datos del Capitán/Líder
     capitan: String,
@@ -24,7 +24,22 @@ const lolSchema = new mongoose.Schema(
     coach: playerSchema,
 
     participadoTorneo: String,
-    aceptaReglas: Boolean
+    aceptaReglas: Boolean,
+
+    // --- NUEVOS CAMPOS DE PAGO ---
+    pagoRealizado: {
+        type: Boolean,
+        default: false
+    },
+    comprobantePago: {
+        type: String, // Link de Cloudinary del comprobante
+        default: null
+    },
+    
+    fechaRegistro: {
+        type: Date,
+        default: Date.now
+    }
   },
   {
     collection: "Lol"

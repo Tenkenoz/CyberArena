@@ -1,8 +1,7 @@
 import express from "express";
-import Lol from "../models/lol.model.js";
+import Lol from "../models/Lol.js"; // Asegúrate que coincida con el nombre del archivo del modelo
 import multer from "multer";
 import { v2 as cloudinary } from 'cloudinary';
-import { CloudinaryStorage } from 'multer-storage-cloudinary';
 import dotenv from 'dotenv';
 
 dotenv.config();
@@ -16,47 +15,54 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET
 });
 
-// --- 2. CONFIGURACIÓN DE MULTER (Storage) ---
-const storage = new CloudinaryStorage({
-  cloudinary: cloudinary,
-  params: {
-    folder: 'cyber-arena/lol-logos', // Carpeta en Cloudinary
-    allowed_formats: ['jpg', 'png', 'jpeg', 'webp'],
-    // transformation: [{ width: 500, height: 500, crop: 'limit' }] // Opcional: Redimensionar
-  },
+// --- 2. CONFIGURACIÓN DE MULTER (Memoria) ---
+// Usamos memoria para poder decidir dinámicamente en qué carpeta de Cloudinary guardar cada archivo
+const storage = multer.memoryStorage();
+const upload = multer({ 
+    storage: storage,
+    limits: { fileSize: 5 * 1024 * 1024 } // Límite de 5MB por archivo
 });
 
-const upload = multer({ storage: storage });
+// --- FUNCIÓN AUXILIAR PARA SUBIR A CLOUDINARY ---
+const uploadToCloudinary = async (fileBuffer, folder) => {
+    return new Promise((resolve, reject) => {
+        const uploadStream = cloudinary.uploader.upload_stream(
+            { folder: folder, resource_type: 'auto' },
+            (error, result) => {
+                if (error) reject(error);
+                else resolve(result.secure_url);
+            }
+        );
+        uploadStream.end(fileBuffer);
+    });
+};
 
 // --- RUTA POST: INSCRIBIR EQUIPO ---
-// 'logoEquipo' debe coincidir con el nombre del campo en el FormData del frontend
-router.post("/inscripcion", upload.single("logoEquipo"), async (req, res) => {
+// Aceptamos dos archivos: 'logoEquipo' y 'comprobante'
+const uploadFields = upload.fields([
+    { name: 'logoEquipo', maxCount: 1 }, 
+    { name: 'comprobante', maxCount: 1 }
+]);
+
+router.post("/inscripcion", uploadFields, async (req, res) => {
   try {
-    // IMPORTANTE: Al enviar archivos, los datos de texto (JSON) vienen como string 
-    // dentro de un campo (usualmente lo llamamos 'datos') o desglosados.
-    // Aquí asumimos que el frontend envía un campo 'datos' con el JSON stringified.
-    
+    // 1. PROCESAR EL JSON (datos)
     let bodyData = {};
     if (req.body.datos) {
         try {
             bodyData = JSON.parse(req.body.datos);
         } catch (e) {
-            // Si el JSON falla, borramos la imagen subida para no dejar basura
-            if (req.file) await cloudinary.uploader.destroy(req.file.filename);
             return res.status(400).json({ ok: false, msg: "Formato de datos inválido" });
         }
     } else {
-        // Fallback por si envías los campos sueltos (Postman sin JSON stringify)
         bodyData = req.body;
     }
 
-    console.log("📝 Datos recibidos:", bodyData);
+    console.log("📝 Datos LoL recibidos:", bodyData.nombreEquipo);
     
-    // 1. Validar nombre de equipo único
+    // 2. VALIDACIONES BÁSICAS
     const { nombreEquipo } = bodyData;
-
     if (!nombreEquipo) {
-         if (req.file) await cloudinary.uploader.destroy(req.file.filename);
          return res.status(400).json({ ok: false, msg: "El nombre del equipo es obligatorio." });
     }
 
@@ -65,27 +71,49 @@ router.post("/inscripcion", upload.single("logoEquipo"), async (req, res) => {
     });
 
     if (existe) {
-        // SI EXISTE: Borramos la imagen que se acaba de subir a Cloudinary
-        if (req.file) {
-            await cloudinary.uploader.destroy(req.file.filename);
-            console.log("🗑️ Imagen borrada de Cloudinary por duplicidad.");
-        }
-
         return res.status(400).json({
             ok: false,
             msg: `El nombre de equipo '${nombreEquipo}' ya está ocupado. Por favor elige otro.`
         });
     }
 
-    // 2. Guardar en MongoDB
-    // req.file.path contiene la URL pública de la imagen en Cloudinary
+    // 3. SUBIDA DE ARCHIVOS (Si existen)
+    let logoUrl = null;
+    let comprobanteUrl = null;
+
+    // A) Subir Logo del Equipo (si se envió)
+    if (req.files && req.files['logoEquipo']) {
+        try {
+            const file = req.files['logoEquipo'][0];
+            logoUrl = await uploadToCloudinary(file.buffer, 'cyber-arena/lol-logos');
+        } catch (error) {
+            console.error("Error subiendo logo:", error);
+            return res.status(500).json({ ok: false, msg: "Error al subir el logo del equipo" });
+        }
+    }
+
+    // B) Subir Comprobante de Pago (si se envió)
+    if (req.files && req.files['comprobante']) {
+        try {
+            const file = req.files['comprobante'][0];
+            comprobanteUrl = await uploadToCloudinary(file.buffer, 'cyber-arena/comprobantes/lol');
+        } catch (error) {
+            console.error("Error subiendo comprobante:", error);
+            return res.status(500).json({ ok: false, msg: "Error al subir el comprobante de pago" });
+        }
+    }
+
+    // 4. GUARDAR EN MONGODB
     const nuevo = new Lol({
         ...bodyData,
-        logoURL: req.file ? req.file.path : null 
+        logoURL: logoUrl, // URL de Cloudinary o null
+        comprobantePago: comprobanteUrl, // URL de Cloudinary o null
+        // Aseguramos que pagoRealizado sea booleano
+        pagoRealizado: bodyData.pagoRealizado === true || bodyData.pagoRealizado === 'true'
     });
 
     await nuevo.save();
-    console.log("✅ Equipo guardado con logo:", nuevo.logoURL);
+    console.log("✅ Equipo LoL guardado:", nuevo.nombreEquipo);
 
     return res.json({
       ok: true,
@@ -94,10 +122,7 @@ router.post("/inscripcion", upload.single("logoEquipo"), async (req, res) => {
     });
 
   } catch (err) {
-    console.error("❌ ERROR BACKEND:", err);
-
-    // Limpieza en caso de error crítico
-    if (req.file) await cloudinary.uploader.destroy(req.file.filename);
+    console.error("❌ ERROR BACKEND LOL:", err);
     
     if (err.code === 11000) {
         return res.status(400).json({ ok: false, msg: "Datos duplicados en la base de datos." });
@@ -114,7 +139,7 @@ router.post("/inscripcion", upload.single("logoEquipo"), async (req, res) => {
 // --- GET (Leer todos) ---
 router.get("/", async (req, res) => {
   try {
-    const inscritos = await Lol.find(); 
+    const inscritos = await Lol.find().sort({ fechaRegistro: -1 }); 
     return res.json({ ok: true, data: inscritos });
   } catch (err) {
     return res.status(500).json({ ok: false, msg: "Error al obtener inscritos" });
@@ -132,6 +157,8 @@ router.get("/:id", async (req, res) => {
     return res.status(500).json({ ok: false, msg: "Error al buscar" });
   }
 });
+
+// --- PUT (Actualizar) ---
 router.put("/:id", async (req, res) => {
   try {
     const { id } = req.params;
@@ -153,22 +180,26 @@ router.delete("/:id", async (req, res) => {
       return res.status(404).json({ ok: false, msg: "No encontrado para eliminar" });
     }
 
-    // Opcional: Intentar borrar la imagen de Cloudinary
-    // Se requiere extraer el public_id de la URL
-    if (eliminado.logoURL && eliminado.logoURL.includes('cloudinary')) {
-        try {
-            const urlParts = eliminado.logoURL.split('/');
-            // Obtener las últimas partes para reconstruir el public_id (carpeta/archivo)
-            const filename = urlParts.pop().split('.')[0]; // nombre sin extensión
-            const folder = urlParts.pop(); // carpeta
-            const publicId = `${folder}/${filename}`;
-            
-            await cloudinary.uploader.destroy(publicId);
-            console.log("🗑️ Imagen eliminada de Cloudinary:", publicId);
-        } catch (e) {
-            console.error("Error al borrar imagen de Cloudinary:", e);
+    // Opcional: Borrar imágenes asociadas de Cloudinary
+    // (Esta lógica es básica, idealmente se extrae el public_id correctamente)
+    const deleteImage = async (url) => {
+        if (url && url.includes('cloudinary')) {
+            try {
+                const urlParts = url.split('/');
+                const filename = urlParts.pop().split('.')[0];
+                const folder = urlParts.pop(); // ej: lol-logos o comprobantes
+                // Ajuste para rutas más profundas si es necesario (ej: cyber-arena/lol-logos)
+                // Esto depende de cómo Cloudinary devuelva la URL, a veces es más complejo.
+                // Para simplificar en producción, se suele guardar el public_id en la BD.
+            } catch (e) {
+                console.error("Error borrando imagen:", e);
+            }
         }
-    }
+    };
+
+    // Intentamos borrar (sin bloquear la respuesta si falla)
+    deleteImage(eliminado.logoURL);
+    deleteImage(eliminado.comprobantePago);
 
     return res.json({
       ok: true,

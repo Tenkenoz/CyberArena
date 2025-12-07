@@ -16,7 +16,7 @@ const valorantSchema = new mongoose.Schema(
     },
     regionServidor: String,
     
-    // Aquí se guardará la URL segura de Cloudinary (https://res.cloudinary.com/...)
+    // Aquí se guardará la URL segura de Cloudinary
     logoURL: String, 
     
     capitan: String,
@@ -32,6 +32,16 @@ const valorantSchema = new mongoose.Schema(
     participadoTorneo: String,
     aceptaReglas: Boolean,
     
+    // --- NUEVOS CAMPOS DE PAGO ---
+    pagoRealizado: {
+        type: Boolean,
+        default: false
+    },
+    comprobantePago: {
+        type: String, // Link de Cloudinary del comprobante
+        default: null
+    },
+
     fechaRegistro: {
         type: Date,
         default: Date.now

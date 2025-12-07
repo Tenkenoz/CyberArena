@@ -5,6 +5,7 @@ import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from 'sonner';
+import { CreditCard, Upload } from 'lucide-react';
 
 // --- CONFIGURACIÓN DE API PARA VERCEL ---
 const getApiUrl = () => {
@@ -53,6 +54,10 @@ export const ValorantForm = ({ onClose }: { onClose: () => void }) => {
   const [participadoTorneo, setParticipadoTorneo] = useState<string>('');
   const [aceptaReglas, setAceptaReglas] = useState(false);
 
+  // --- NUEVOS ESTADOS PARA EL PAGO ---
+  const [yaDeposito, setYaDeposito] = useState(false);
+  const [comprobante, setComprobante] = useState<File | null>(null);
+
   const resetForm = () => {
     setTeamData({
       nombreEquipo: '',
@@ -70,6 +75,8 @@ export const ValorantForm = ({ onClose }: { onClose: () => void }) => {
     setShowCoach(false);
     setParticipadoTorneo('');
     setAceptaReglas(false);
+    setYaDeposito(false);
+    setComprobante(null);
     setFormKey(prev => prev + 1);
   };
 
@@ -79,30 +86,45 @@ export const ValorantForm = ({ onClose }: { onClose: () => void }) => {
     setPlayers(newPlayers);
   };
 
-  // --- VALIDACIÓN DE IMAGEN ---
+  // --- VALIDACIÓN DE LOGO ---
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0] || null;
     
     if (file) {
-        // 1. Validar Tipo de Archivo
-        const validTypes = ['image/jpeg', 'image/png', 'image/jpg'];
-        if (!validTypes.includes(file.type)) {
-            toast.error('Formato no válido. Solo se aceptan imágenes JPG o PNG.');
-            e.target.value = ''; // Limpiar input
+        if (!['image/jpeg', 'image/png', 'image/jpg'].includes(file.type)) {
+            toast.error('Logo: Solo se aceptan imágenes JPG o PNG.');
+            e.target.value = ''; 
             setTeamData(prev => ({ ...prev, logoEquipo: null }));
             return;
         }
-
-        // 2. Validar Tamaño (Máx 5MB)
         if (file.size > 5 * 1024 * 1024) {
-            toast.error('La imagen es demasiado pesada. Máximo 5MB.');
+            toast.error('Logo: La imagen es demasiado pesada. Máximo 5MB.');
             e.target.value = '';
             setTeamData(prev => ({ ...prev, logoEquipo: null }));
             return;
         }
     }
-
     setTeamData(prev => ({ ...prev, logoEquipo: file }));
+  };
+
+  // --- VALIDACIÓN DE COMPROBANTE ---
+  const handleComprobanteChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0] || null;
+    if (file) {
+        if (!['image/jpeg', 'image/png', 'image/jpg'].includes(file.type)) {
+            toast.error('Comprobante: Solo se aceptan imágenes JPG o PNG');
+            e.target.value = '';
+            setComprobante(null);
+            return;
+        }
+        if (file.size > 5 * 1024 * 1024) {
+            toast.error('Comprobante: La imagen no puede pesar más de 5MB');
+            e.target.value = '';
+            setComprobante(null);
+            return;
+        }
+    }
+    setComprobante(file);
   };
 
   // --- VALIDACIONES DEL FORMULARIO ---
@@ -124,7 +146,6 @@ export const ValorantForm = ({ onClose }: { onClose: () => void }) => {
     }
 
     // 3. VALIDACIÓN DE DUPLICADOS (Riot IDs)
-    // Unimos Riot ID del Capitán + Riot IDs de jugadores
     const allRiotIds = [teamData.riotId.trim().toLowerCase()];
     players.forEach(p => allRiotIds.push(p.riotId.trim().toLowerCase()));
 
@@ -144,6 +165,12 @@ export const ValorantForm = ({ onClose }: { onClose: () => void }) => {
 
     if (!participadoTorneo) {
         toast.error('Por favor indica si han participado en torneos anteriormente.');
+        return false;
+    }
+
+    // 5. Validar Pago
+    if (yaDeposito && !comprobante) {
+        toast.error('Si ya depositaron, deben subir la foto del comprobante.');
         return false;
     }
 
@@ -177,7 +204,8 @@ export const ValorantForm = ({ onClose }: { onClose: () => void }) => {
         coach: showCoach ? coach : null,
         
         participadoTorneo: participadoTorneo,
-        aceptaReglas: aceptaReglas
+        aceptaReglas: aceptaReglas,
+        pagoRealizado: yaDeposito // Enviamos el estado del pago
       };
 
       // 2. Crear FormData
@@ -186,6 +214,10 @@ export const ValorantForm = ({ onClose }: { onClose: () => void }) => {
 
       if (teamData.logoEquipo) {
         formData.append('logoEquipo', teamData.logoEquipo);
+      }
+
+      if (yaDeposito && comprobante) {
+        formData.append('comprobante', comprobante);
       }
 
       // 3. Enviar (Usando URL dinámica)
@@ -466,6 +498,52 @@ export const ValorantForm = ({ onClose }: { onClose: () => void }) => {
             </div>
           </RadioGroup>
         </div>
+      </div>
+
+      {/* --- SECCIÓN DE PAGO --- */}
+      <div className="space-y-4 border rounded-lg p-4 bg-muted/30">
+        <h3 className="font-bold flex items-center gap-2 text-primary">
+            <CreditCard className="w-5 h-5" /> Información de Pago
+        </h3>
+        
+        <div className="bg-blue-50 dark:bg-blue-950/30 p-4 rounded-md text-sm space-y-1 border border-blue-100 dark:border-blue-900">
+            <p className="font-semibold text-blue-800 dark:text-blue-300">Banco Pichincha</p>
+            <p><strong>Nombre:</strong> José Sanmartín</p>
+            <p><strong>CI:</strong> 1727585729</p>
+            <p><strong>Cuenta de Ahorro Transaccional:</strong> 2206570945</p>
+            <p><strong>Email:</strong> josesanmartin1999@hotmail.com</p>
+        </div>
+
+        <div className="flex items-start space-x-2 py-2">
+            <Checkbox 
+                id="yaDeposito" 
+                checked={yaDeposito} 
+                onCheckedChange={(checked) => setYaDeposito(checked as boolean)}
+                disabled={loading}
+            />
+            <Label htmlFor="yaDeposito" className="cursor-pointer font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                Ya realicé el depósito de la inscripción
+            </Label>
+        </div>
+
+        {/* INPUT DE ARCHIVO (Solo visible si marcó el checkbox) */}
+        {yaDeposito && (
+            <div className="space-y-2 animate-in fade-in slide-in-from-top-2">
+                <Label htmlFor="comprobante" className="text-primary font-semibold">Subir Comprobante (Foto/Captura)</Label>
+                <div className="flex items-center gap-2">
+                    <Input 
+                        id="comprobante" 
+                        type="file" 
+                        accept="image/png, image/jpeg, image/jpg"
+                        onChange={handleComprobanteChange}
+                        disabled={loading}
+                        className="cursor-pointer file:text-primary"
+                    />
+                    <Upload className="w-4 h-4 text-muted-foreground" />
+                </div>
+                <p className="text-xs text-muted-foreground">Formato JPG o PNG. Máximo 5MB.</p>
+            </div>
+        )}
       </div>
 
       {/* Aceptar reglas */}

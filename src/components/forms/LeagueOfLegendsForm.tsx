@@ -5,6 +5,7 @@ import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from 'sonner';
+import { CreditCard, Upload } from 'lucide-react';
 
 // --- CONFIGURACIÓN DE API PARA VERCEL ---
 const getApiUrl = () => {
@@ -64,6 +65,11 @@ export const LeagueOfLegendsForm: React.FC<{ onClose: () => void }> = ({ onClose
   const [showCoach, setShowCoach] = useState(false);
   const [participadoTorneo, setParticipadoTorneo] = useState<string>('');
   const [aceptaReglas, setAceptaReglas] = useState(false);
+  
+  // --- NUEVOS ESTADOS PARA EL PAGO ---
+  const [yaDeposito, setYaDeposito] = useState(false);
+  const [comprobante, setComprobante] = useState<File | null>(null);
+
   const [loading, setLoading] = useState(false);
 
   const resetForm = () => {
@@ -83,6 +89,8 @@ export const LeagueOfLegendsForm: React.FC<{ onClose: () => void }> = ({ onClose
     setShowCoach(false);
     setParticipadoTorneo('');
     setAceptaReglas(false);
+    setYaDeposito(false);
+    setComprobante(null);
     setFormKey(prev => prev + 1);
   };
 
@@ -94,23 +102,19 @@ export const LeagueOfLegendsForm: React.FC<{ onClose: () => void }> = ({ onClose
     });
   };
 
-  // --- VALIDACIÓN DE IMAGEN ---
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // --- VALIDACIÓN DE LOGO DEL EQUIPO ---
+  const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0] ?? null;
     
     if (file) {
-        // Validamos el tipo MIME del archivo
         const validTypes = ['image/jpeg', 'image/png', 'image/jpg'];
         if (!validTypes.includes(file.type)) {
             toast.error('Formato no permitido. Solo se aceptan imágenes JPG o PNG.');
-            
-            // Limpiamos el input para que el usuario pueda intentar de nuevo
             e.target.value = ''; 
             setTeamData(prev => ({ ...prev, logoEquipo: null }));
             return;
         }
 
-        // Opcional: Validar tamaño (ej. máx 5MB)
         if (file.size > 5 * 1024 * 1024) {
             toast.error('La imagen es muy pesada. El tamaño máximo es 5MB.');
             e.target.value = '';
@@ -120,6 +124,26 @@ export const LeagueOfLegendsForm: React.FC<{ onClose: () => void }> = ({ onClose
     }
 
     setTeamData(prev => ({ ...prev, logoEquipo: file }));
+  };
+
+  // --- VALIDACIÓN DE COMPROBANTE DE PAGO ---
+  const handleComprobanteChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0] || null;
+    if (file) {
+        if (!['image/jpeg', 'image/png', 'image/jpg'].includes(file.type)) {
+            toast.error('Solo se permiten imágenes JPG o PNG');
+            e.target.value = '';
+            setComprobante(null);
+            return;
+        }
+        if (file.size > 5 * 1024 * 1024) {
+            toast.error('La imagen no puede pesar más de 5MB');
+            e.target.value = '';
+            setComprobante(null);
+            return;
+        }
+    }
+    setComprobante(file);
   };
 
   const validateForm = () => {
@@ -169,6 +193,12 @@ export const LeagueOfLegendsForm: React.FC<{ onClose: () => void }> = ({ onClose
         return false;
     }
 
+    // 4. Validar Pago
+    if (yaDeposito && !comprobante) {
+        toast.error('Si ya realizaste el depósito, debes subir el comprobante.');
+        return false;
+    }
+
     if (!aceptaReglas) {
       toast.error('Debes aceptar las reglas del torneo');
       return false;
@@ -195,7 +225,8 @@ export const LeagueOfLegendsForm: React.FC<{ onClose: () => void }> = ({ onClose
         suplente: showSuplente ? suplente : null,
         coach: showCoach ? coach : null,
         participadoTorneo: participadoTorneo,
-        aceptaReglas: aceptaReglas
+        aceptaReglas: aceptaReglas,
+        pagoRealizado: yaDeposito // Agregamos el estado del pago al JSON
       };
 
       const formData = new FormData();
@@ -205,12 +236,14 @@ export const LeagueOfLegendsForm: React.FC<{ onClose: () => void }> = ({ onClose
         formData.append('logoEquipo', teamData.logoEquipo);
       }
 
-      // Usamos la URL dinámica aquí
+      // Agregamos el comprobante al FormData si existe
+      if (yaDeposito && comprobante) {
+        formData.append('comprobante', comprobante);
+      }
+
       const res = await fetch(`${API_BASE_URL}/api/lol/inscripcion`, {
         method: 'POST',
         body: formData,
-        // Nota: No establecemos 'Content-Type' manualmente cuando usamos FormData,
-        // el navegador lo hace automáticamente incluyendo el boundary.
       });
 
       const data = await res.json().catch(() => null);
@@ -269,9 +302,8 @@ export const LeagueOfLegendsForm: React.FC<{ onClose: () => void }> = ({ onClose
             <Input
               id="logoEquipo"
               type="file"
-              // Agregamos filtro nativo del navegador
               accept="image/png, image/jpeg, image/jpg"
-              onChange={handleFileChange}
+              onChange={handleLogoChange}
               className="file:bg-primary file:text-primary-foreground file:border-0 file:rounded file:px-2 file:mr-2"
               disabled={loading}
             />
@@ -532,6 +564,52 @@ export const LeagueOfLegendsForm: React.FC<{ onClose: () => void }> = ({ onClose
             </div>
           </RadioGroup>
         </div>
+      </div>
+
+      {/* --- SECCIÓN DE PAGO --- */}
+      <div className="space-y-4 border rounded-lg p-4 bg-muted/30">
+        <h3 className="font-bold flex items-center gap-2 text-primary">
+            <CreditCard className="w-5 h-5" /> Información de Pago
+        </h3>
+        
+        <div className="bg-blue-50 dark:bg-blue-950/30 p-4 rounded-md text-sm space-y-1 border border-blue-100 dark:border-blue-900">
+            <p className="font-semibold text-blue-800 dark:text-blue-300">Banco Pichincha</p>
+            <p><strong>Nombre:</strong> José Sanmartín</p>
+            <p><strong>CI:</strong> 1727585729</p>
+            <p><strong>Cuenta de Ahorro Transaccional:</strong> 2206570945</p>
+            <p><strong>Email:</strong> josesanmartin1999@hotmail.com</p>
+        </div>
+
+        <div className="flex items-start space-x-2 py-2">
+            <Checkbox 
+                id="yaDeposito" 
+                checked={yaDeposito} 
+                onCheckedChange={(checked) => setYaDeposito(checked as boolean)}
+                disabled={loading}
+            />
+            <Label htmlFor="yaDeposito" className="cursor-pointer font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                Ya realicé el depósito de la inscripción
+            </Label>
+        </div>
+
+        {/* INPUT DE ARCHIVO (Solo visible si marcó el checkbox) */}
+        {yaDeposito && (
+            <div className="space-y-2 animate-in fade-in slide-in-from-top-2">
+                <Label htmlFor="comprobante" className="text-primary font-semibold">Subir Comprobante (Foto/Captura)</Label>
+                <div className="flex items-center gap-2">
+                    <Input 
+                        id="comprobante" 
+                        type="file" 
+                        accept="image/png, image/jpeg, image/jpg"
+                        onChange={handleComprobanteChange}
+                        disabled={loading}
+                        className="cursor-pointer file:text-primary"
+                    />
+                    <Upload className="w-4 h-4 text-muted-foreground" />
+                </div>
+                <p className="text-xs text-muted-foreground">Formato JPG o PNG. Máximo 5MB.</p>
+            </div>
+        )}
       </div>
 
       {/* Aceptar reglas */}

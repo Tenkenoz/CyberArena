@@ -44,6 +44,7 @@ import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import LockIcon from "@mui/icons-material/Lock";
 import AccountCircleIcon from "@mui/icons-material/AccountCircle";
 import LoginIcon from "@mui/icons-material/Login";
+import ImageIcon from "@mui/icons-material/Image"; // <--- NUEVO ICONO
 
 import { toast } from "sonner";
 
@@ -342,6 +343,37 @@ export const AdminTable = () => {
                 </Box>
             )
         },
+        // --- NUEVA COLUMNA DE PAGO ---
+        {
+            accessorKey: "pagoRealizado",
+            header: "Pago",
+            size: 100,
+            Cell: ({ cell }) => (
+                <Chip
+                    label={cell.getValue() ? "Pagado" : "Pendiente"}
+                    color={cell.getValue() ? "success" : "warning"}
+                    size="small"
+                    variant="filled"
+                />
+            )
+        },
+        // --- NUEVA COLUMNA DE COMPROBANTE ---
+        {
+            accessorKey: "comprobantePago",
+            header: "Comprobante",
+            size: 100,
+            enableEditing: false,
+            Cell: ({ cell }) => cell.getValue() ? (
+                <Tooltip title="Ver Comprobante">
+                    <IconButton onClick={(e) => {
+                        e.stopPropagation();
+                        setPreviewImage(getImageUrl(cell.getValue<string>()));
+                    }}>
+                        <ImageIcon color="primary" />
+                    </IconButton>
+                </Tooltip>
+            ) : <Typography variant="caption" color="text.secondary">No adjunto</Typography>
+        },
         { 
             accessorKey: "regionServidor", 
             header: "Región",
@@ -367,6 +399,37 @@ export const AdminTable = () => {
         { accessorKey: "cedula", header: "Cédula" },
         { accessorKey: "telefono", header: "Teléfono" },
         { accessorKey: "nombreUsuario", header: "Nick / ID Juego" },
+        // --- NUEVA COLUMNA DE PAGO ---
+        {
+            accessorKey: "pagoRealizado",
+            header: "Pago",
+            size: 100,
+            Cell: ({ cell }) => (
+                <Chip
+                    label={cell.getValue() ? "Pagado" : "Pendiente"}
+                    color={cell.getValue() ? "success" : "warning"}
+                    size="small"
+                    variant="filled"
+                />
+            )
+        },
+        // --- NUEVA COLUMNA DE COMPROBANTE ---
+        {
+            accessorKey: "comprobantePago",
+            header: "Comprobante",
+            size: 100,
+            enableEditing: false,
+            Cell: ({ cell }) => cell.getValue() ? (
+                <Tooltip title="Ver Comprobante">
+                    <IconButton onClick={(e) => {
+                        e.stopPropagation();
+                        setPreviewImage(getImageUrl(cell.getValue<string>()));
+                    }}>
+                        <ImageIcon color="primary" />
+                    </IconButton>
+                </Tooltip>
+            ) : <Typography variant="caption" color="text.secondary">No adjunto</Typography>
+        },
         { 
             accessorKey: "participadoTorneo", 
             header: "Veterano",

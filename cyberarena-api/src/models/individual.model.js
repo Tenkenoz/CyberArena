@@ -35,6 +35,16 @@ const individualSchema = new mongoose.Schema({
         type: Boolean,
         required: true
     },
+    // --- NUEVO CAMPO BOOLEANO ---
+    pagoRealizado: {
+        type: Boolean,
+        default: false // Por defecto es falso si no marcan el checkbox
+    },
+    // --- CAMPO PARA LA IMAGEN ---
+    comprobantePago: {
+        type: String, 
+        default: null
+    },
     fechaRegistro: {
         type: Date,
         default: Date.now
@@ -43,5 +53,4 @@ const individualSchema = new mongoose.Schema({
 
 individualSchema.index({ cedula: 1, gameId: 1 }, { unique: true });
 
-// CAMBIO IMPORTANTE: Exportamos el Schema, no el modelo compilado.
 export { individualSchema };

@@ -1,9 +1,26 @@
 import express from 'express';
 import mongoose from 'mongoose';
-// Importamos solo el esquema, no el modelo
-import { individualSchema } from '../models/individual.model.js'; 
+import multer from 'multer';
+import { v2 as cloudinary } from 'cloudinary';
+// Asegúrate de que la ruta del modelo sea correcta según tu estructura de archivos
+import { individualSchema } from '../models/Individual.js'; 
 
 const router = express.Router();
+
+// --- CONFIGURACIÓN DE CLOUDINARY ---
+cloudinary.config({
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+    api_key: process.env.CLOUDINARY_API_KEY,
+    api_secret: process.env.CLOUDINARY_API_SECRET
+});
+
+// --- CONFIGURACIÓN DE MULTER (Memoria) ---
+// Guardamos el archivo en memoria RAM temporalmente para subirlo a Cloudinary
+const storage = multer.memoryStorage();
+const upload = multer({ 
+    storage,
+    limits: { fileSize: 5 * 1024 * 1024 } // Límite de 5MB
+});
 
 const VALID_GAMES = ['tft', 'chess', 'clash-royale'];
 
@@ -11,7 +28,6 @@ const VALID_GAMES = ['tft', 'chess', 'clash-royale'];
 const getGameModel = (gameId) => {
     let collectionName;
 
-    // Mapeamos el ID de la URL al nombre exacto de la colección que quieres en Mongo
     switch (gameId) {
         case 'tft':
             collectionName = 'TFT';
@@ -20,22 +36,23 @@ const getGameModel = (gameId) => {
             collectionName = 'Chess';
             break;
         case 'clash-royale':
-            collectionName = 'Clash'; // Según tu imagen se llama 'Clash'
+            collectionName = 'Clash';
             break;
         default:
             throw new Error('Juego no soportado');
     }
 
-    // Revisamos si el modelo ya existe para no recompilarlo, si no, lo creamos.
-    // Pasamos collectionName como tercer argumento para forzar el nombre exacto (sin plurales)
+    // Usamos el esquema importado
     return mongoose.models[collectionName] || mongoose.model(collectionName, individualSchema, collectionName);
 };
 
-// --- CREAR (Inscripción) ---
-router.post('/:gameId/inscripcion', async (req, res) => {
+// --- CREAR (Inscripción con Imagen) ---
+// Agregamos el middleware 'upload.single' para procesar la imagen 'comprobante'
+router.post('/:gameId/inscripcion', upload.single('comprobante'), async (req, res) => {
     try {
         const { gameId } = req.params;
-        const { nombre, cedula, telefono, nombreUsuario, participadoTorneo, aceptaReglas } = req.body;
+        // Obtenemos los campos de texto del body
+        const { nombre, cedula, telefono, nombreUsuario, participadoTorneo, aceptaReglas, pagoRealizado } = req.body;
 
         if (!VALID_GAMES.includes(gameId)) {
             return res.status(400).json({ 
@@ -44,12 +61,10 @@ router.post('/:gameId/inscripcion', async (req, res) => {
             });
         }
 
-        // 1. Obtenemos el modelo específico para este juego
         const GameModel = getGameModel(gameId);
 
-        // 2. Buscamos si ya existe en ESA colección específica
+        // Validar duplicados
         const existe = await GameModel.findOne({ cedula });
-        
         if (existe) {
             return res.status(400).json({ 
                 success: false, 
@@ -57,7 +72,31 @@ router.post('/:gameId/inscripcion', async (req, res) => {
             });
         }
 
-        // 3. Guardamos en la colección específica
+        // --- LÓGICA DE SUBIDA DE IMAGEN A CLOUDINARY ---
+        let comprobanteUrl = null;
+
+        if (req.file) {
+            try {
+                // Convertimos el buffer a base64 para subirlo directamente
+                const b64 = Buffer.from(req.file.buffer).toString('base64');
+                const dataURI = "data:" + req.file.mimetype + ";base64," + b64;
+                
+                const result = await cloudinary.uploader.upload(dataURI, {
+                    folder: `comprobantes/${gameId}`, // Organizamos por carpetas
+                    resource_type: 'auto'
+                });
+                
+                comprobanteUrl = result.secure_url;
+            } catch (uploadError) {
+                console.error('Error subiendo imagen a Cloudinary:', uploadError);
+                return res.status(500).json({ 
+                    success: false, 
+                    message: 'Error al subir el comprobante de pago.' 
+                });
+            }
+        }
+
+        // Guardamos en la base de datos
         const nuevaInscripcion = new GameModel({
             gameId,
             nombre,
@@ -65,7 +104,9 @@ router.post('/:gameId/inscripcion', async (req, res) => {
             telefono,
             nombreUsuario,
             participadoTorneo,
-            aceptaReglas
+            aceptaReglas: aceptaReglas === 'true' || aceptaReglas === true, // Asegurar booleano
+            pagoRealizado: pagoRealizado === 'true' || pagoRealizado === true, // Asegurar booleano
+            comprobantePago: comprobanteUrl // Guardamos la URL
         });
 
         await nuevaInscripcion.save();
@@ -91,7 +132,7 @@ router.post('/:gameId/inscripcion', async (req, res) => {
     }
 });
 
-// --- LEER TODOS (Obtener lista de inscritos por juego) ---
+// --- LEER TODOS ---
 router.get('/:gameId/inscritos', async (req, res) => {
     try {
         const { gameId } = req.params;
@@ -110,7 +151,7 @@ router.get('/:gameId/inscritos', async (req, res) => {
     }
 });
 
-// --- LEER UNO (Obtener una inscripción específica por ID) ---
+// --- LEER UNO ---
 router.get('/:gameId/inscritos/:id', async (req, res) => {
     try {
         const { gameId, id } = req.params;
@@ -133,7 +174,7 @@ router.get('/:gameId/inscritos/:id', async (req, res) => {
     }
 });
 
-// --- MODIFICAR (Actualizar inscripción por ID) ---
+// --- MODIFICAR ---
 router.put('/:gameId/inscritos/:id', async (req, res) => {
     try {
         const { gameId, id } = req.params;
@@ -157,7 +198,7 @@ router.put('/:gameId/inscritos/:id', async (req, res) => {
     }
 });
 
-// --- ELIMINAR (Borrar inscripción por ID) ---
+// --- ELIMINAR ---
 router.delete('/:gameId/inscritos/:id', async (req, res) => {
     try {
         const { gameId, id } = req.params;

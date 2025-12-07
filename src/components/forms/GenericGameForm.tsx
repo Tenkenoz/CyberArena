@@ -5,6 +5,7 @@ import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from 'sonner';
+import { CreditCard, Upload } from 'lucide-react';
 
 // --- CONFIGURACIÓN DE API PARA VERCEL ---
 // Detecta la URL de la API según el entorno.
@@ -48,7 +49,35 @@ export const GenericGameForm = ({ gameName, onClose }: GenericGameFormProps) => 
 
   const [participadoTorneo, setParticipadoTorneo] = useState<string>('');
   const [aceptaReglas, setAceptaReglas] = useState(false);
+  
+  // --- NUEVOS ESTADOS PARA EL PAGO ---
+  const [yaDeposito, setYaDeposito] = useState(false);
+  const [comprobante, setComprobante] = useState<File | null>(null);
+  
   const [loading, setLoading] = useState(false);
+
+  // --- VALIDACIÓN DE ARCHIVO ---
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0] || null;
+    
+    if (file) {
+        // Validar tipo de imagen
+        if (!['image/jpeg', 'image/png', 'image/jpg'].includes(file.type)) {
+            toast.error('Solo se permiten imágenes JPG o PNG');
+            e.target.value = ''; // Limpiar input
+            setComprobante(null);
+            return;
+        }
+        // Validar tamaño (Máximo 5MB)
+        if (file.size > 5 * 1024 * 1024) {
+            toast.error('La imagen es muy pesada. Máximo 5MB.');
+            e.target.value = '';
+            setComprobante(null);
+            return;
+        }
+    }
+    setComprobante(file);
+  };
 
   // --- FUNCIÓN DE VALIDACIÓN ---
   const validateForm = () => {
@@ -76,7 +105,13 @@ export const GenericGameForm = ({ gameName, onClose }: GenericGameFormProps) => 
       return false;
     }
 
-    // 3. Validar reglas
+    // 3. Validar Pago (Si marcó que ya depositó, DEBE subir foto)
+    if (yaDeposito && !comprobante) {
+      toast.error('Si ya realizaste el depósito, por favor sube el comprobante (foto/captura).');
+      return false;
+    }
+
+    // 4. Validar reglas
     if (!aceptaReglas) {
       toast.error('Debes aceptar las reglas del torneo para continuar.');
       return false;
@@ -100,17 +135,30 @@ export const GenericGameForm = ({ gameName, onClose }: GenericGameFormProps) => 
     setLoading(true);
 
     try {
-      // Usamos la constante dinámica en lugar de localhost hardcodeado
+      // --- CAMBIO IMPORTANTE: Usamos FormData para enviar archivos ---
+      const dataToSend = new FormData();
+      
+      // Agregamos campos de texto
+      dataToSend.append('nombre', formData.nombre);
+      dataToSend.append('cedula', formData.cedula);
+      dataToSend.append('telefono', formData.telefono);
+      dataToSend.append('nombreUsuario', formData.nombreUsuario);
+      dataToSend.append('participadoTorneo', participadoTorneo);
+      dataToSend.append('aceptaReglas', String(aceptaReglas));
+      
+      // Agregamos estado del pago (Boolean convertido a String)
+      dataToSend.append('pagoRealizado', String(yaDeposito));
+
+      // Si subió comprobante, lo agregamos
+      if (yaDeposito && comprobante) {
+        dataToSend.append('comprobante', comprobante);
+      }
+
+      // Usamos la constante dinámica
       const response = await fetch(`${API_BASE_URL}/api/${gameId}/inscripcion`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          ...formData,
-          participadoTorneo: participadoTorneo,
-          aceptaReglas
-        }),
+        // NO agregamos 'Content-Type': 'application/json' porque FormData lo hace automático
+        body: dataToSend,
       });
 
       const data = await response.json();
@@ -125,6 +173,8 @@ export const GenericGameForm = ({ gameName, onClose }: GenericGameFormProps) => 
       setFormData({ nombre: '', cedula: '', telefono: '', nombreUsuario: '' });
       setParticipadoTorneo('');
       setAceptaReglas(false);
+      setYaDeposito(false);
+      setComprobante(null);
       
       onClose();
 
@@ -137,7 +187,7 @@ export const GenericGameForm = ({ gameName, onClose }: GenericGameFormProps) => 
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
+    <form onSubmit={handleSubmit} className="space-y-6 max-h-[80vh] overflow-y-auto pr-2">
       <div className="space-y-4">
         <h3 className="font-display text-xl font-bold text-primary border-b border-border pb-2">
           Datos del Participante
@@ -213,6 +263,52 @@ export const GenericGameForm = ({ gameName, onClose }: GenericGameFormProps) => 
             <Label htmlFor="torneo-no" className="cursor-pointer">No</Label>
           </div>
         </RadioGroup>
+      </div>
+
+      {/* --- SECCIÓN DE PAGO --- */}
+      <div className="space-y-4 border rounded-lg p-4 bg-muted/30">
+        <h3 className="font-bold flex items-center gap-2 text-primary">
+            <CreditCard className="w-5 h-5" /> Información de Pago
+        </h3>
+        
+        <div className="bg-blue-50 dark:bg-blue-950/30 p-4 rounded-md text-sm space-y-1 border border-blue-100 dark:border-blue-900">
+            <p className="font-semibold text-blue-800 dark:text-blue-300">Banco Pichincha</p>
+            <p><strong>Nombre:</strong> José Sanmartín</p>
+            <p><strong>CI:</strong> 1727585729</p>
+            <p><strong>Cuenta de Ahorro Transaccional:</strong> 2206570945</p>
+            <p><strong>Email:</strong> josesanmartin1999@hotmail.com</p>
+        </div>
+
+        <div className="flex items-start space-x-2 py-2">
+            <Checkbox 
+                id="yaDeposito" 
+                checked={yaDeposito} 
+                onCheckedChange={(checked) => setYaDeposito(checked as boolean)}
+                disabled={loading}
+            />
+            <Label htmlFor="yaDeposito" className="cursor-pointer font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                Ya realicé el depósito de la inscripción
+            </Label>
+        </div>
+
+        {/* INPUT DE ARCHIVO (Solo visible si marcó el checkbox) */}
+        {yaDeposito && (
+            <div className="space-y-2 animate-in fade-in slide-in-from-top-2">
+                <Label htmlFor="comprobante" className="text-primary font-semibold">Subir Comprobante (Foto/Captura)</Label>
+                <div className="flex items-center gap-2">
+                    <Input 
+                        id="comprobante" 
+                        type="file" 
+                        accept="image/png, image/jpeg, image/jpg"
+                        onChange={handleFileChange}
+                        disabled={loading}
+                        className="cursor-pointer file:text-primary"
+                    />
+                    <Upload className="w-4 h-4 text-muted-foreground" />
+                </div>
+                <p className="text-xs text-muted-foreground">Formato JPG o PNG. Máximo 5MB.</p>
+            </div>
+        )}
       </div>
 
       {/* Aceptar reglas */}
