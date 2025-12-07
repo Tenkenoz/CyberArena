@@ -3,7 +3,7 @@ import mongoose from 'mongoose';
 import multer from 'multer';
 import { v2 as cloudinary } from 'cloudinary';
 // Asegúrate de que la ruta del modelo sea correcta según tu estructura de archivos
-import { individualSchema } from '../models/Individual.js'; 
+import { individualSchema } from '../models/individual.model.js'; 
 
 const router = express.Router();
 

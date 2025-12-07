@@ -1,5 +1,5 @@
 import express from "express";
-import Lol from "../models/Lol.js"; // Asegúrate que coincida con el nombre del archivo del modelo
+import Lol from "../models/lol.model.js"; // Asegúrate que coincida con el nombre del archivo del modelo
 import multer from "multer";
 import { v2 as cloudinary } from 'cloudinary';
 import dotenv from 'dotenv';

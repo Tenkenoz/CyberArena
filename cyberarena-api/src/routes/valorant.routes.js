@@ -1,5 +1,5 @@
 import express from "express";
-import Valorant from "../models/Valorant.js"; // Ajustado para coincidir con tu archivo de modelo
+import Valorant from "../models/valorant.model.js"; // Ajustado para coincidir con tu archivo de modelo
 import multer from "multer";
 import { v2 as cloudinary } from 'cloudinary';
 import dotenv from 'dotenv';
