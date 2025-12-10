@@ -9,7 +9,7 @@ export const Footer = () => {
             </div>
             <p className="text-sm text-muted-foreground mb-2">
               <strong>Dirección</strong><br />
-              Universidad de las Fuerzas Armadas ESPE, Sangolquí, Ecuador
+              Sangolquí, Ecuador
             </p>
             <p className="text-sm text-muted-foreground">
               <strong>Contacto</strong><br />

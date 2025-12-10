@@ -1,15 +1,31 @@
 import { Button } from '@/components/ui/button';
 
+// 1. Definimos la interfaz para la estructura de los detalles
+interface GameDetail {
+  label: string;
+  value: string;
+}
+
+// 2. Agregamos 'details' a las propiedades del componente
 interface GameCardProps {
   title: string;
   description: string;
   type: 'equipo' | 'individual';
   isMain?: boolean;
   image?: string;
+  details?: GameDetail[]; // <--- NUEVA PROPIEDAD
   onInscribirse: () => void;
 }
 
-export const GameCard = ({ title, description, type, isMain, image, onInscribirse }: GameCardProps) => {
+export const GameCard = ({ 
+  title, 
+  description, 
+  type, 
+  isMain, 
+  image, 
+  details, // <--- La recibimos
+  onInscribirse 
+}: GameCardProps) => {
   return (
     <div
       style={image ? { backgroundImage: `url(${image})`, backgroundSize: 'cover', backgroundPosition: 'center' } : undefined}
@@ -37,14 +53,33 @@ export const GameCard = ({ title, description, type, isMain, image, onInscribirs
         <p className="text-muted-foreground text-sm flex-grow mb-4">
           {description}
         </p>
-        <Button 
-          variant={"card"} 
-          size={isMain ? "lg" : "default"}
-          onClick={onInscribirse}
-          className="w-full"
-        >
-          Inscribirse
-        </Button>
+
+        {/* 3. Renderizamos la tabla de detalles si existen */}
+        {details && details.length > 0 && (
+          <div className="mt-4 pt-4 border-t border-border/70">
+            <h4 className="font-semibold text-base mb-2">Detalles del Evento:</h4>
+            <dl className="space-y-1 text-sm">
+              {details.map((detail, index) => (
+                <div key={index} className="flex justify-between">
+                  <dt className="text-muted-foreground">{detail.label}</dt>
+                  <dd className="font-medium text-white">{detail.value}</dd>
+                </div>
+              ))}
+            </dl>
+          </div>
+        )}
+        {/* FIN del renderizado de detalles */}
+
+        <div className="mt-6"> {/* Separamos el botón de los detalles/descripción */}
+            <Button 
+                variant={"card"} 
+                size={isMain ? "lg" : "default"}
+                onClick={onInscribirse}
+                className="w-full"
+            >
+                Inscribirse
+            </Button>
+        </div>
       </div>
       
       {/* Hover glow effect */}
