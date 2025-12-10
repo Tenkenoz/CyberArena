@@ -47,6 +47,9 @@ export const Footer = () => {
             </ul>
           </div>
         </div>
+        <div className="font-semibold mb-4">
+          Recuerda que una competición sana es la clave de muchas victorias
+        </div>
         
         <div className="border-t border-border mt-8 pt-8 text-center text-sm text-muted-foreground">
           © 2025 Cyber Arena. Todos los derechos reservados.
