@@ -275,12 +275,36 @@ export const AdminTable = () => {
       const rowCopy = JSON.parse(JSON.stringify(row));
       
       if (juegosConfig[juegoSeleccionado as keyof typeof juegosConfig].type === "team") {
-          if (!rowCopy.jugadores) rowCopy.jugadores = [];
-          while (rowCopy.jugadores.length < 4) {
-              rowCopy.jugadores.push({ nombre: "", cedula: "", rol: "", nombreInvocador: "", riotId: "" });
+          // Inicializar jugadores si no existe
+          if (!rowCopy.jugadores || !Array.isArray(rowCopy.jugadores)) {
+              rowCopy.jugadores = [];
           }
-          if (!rowCopy.suplente) rowCopy.suplente = { nombre: "", cedula: "", rol: "", nombreInvocador: "", riotId: "" };
-          if (!rowCopy.coach) rowCopy.coach = { nombre: "", cedula: "", rol: "", nombreInvocador: "", riotId: "" };
+          
+          // Asegurar que haya al menos 4 jugadores
+          while (rowCopy.jugadores.length < 4) {
+              rowCopy.jugadores.push({ 
+                  nombre: "", 
+                  cedula: "", 
+                  rol: "", 
+                  nombreInvocador: "", 
+                  riotId: "" 
+              });
+          }
+          
+          if (!rowCopy.suplente) rowCopy.suplente = { 
+              nombre: "", 
+              cedula: "", 
+              rol: "", 
+              nombreInvocador: "", 
+              riotId: "" 
+          };
+          if (!rowCopy.coach) rowCopy.coach = { 
+              nombre: "", 
+              cedula: "", 
+              rol: "", 
+              nombreInvocador: "", 
+              riotId: "" 
+          };
       }
       
       setEditingRow(rowCopy);
@@ -336,6 +360,7 @@ export const AdminTable = () => {
 
   const handlePlayerChange = (index: number, field: string, value: string) => {
     setEditingRow((prev: any) => {
+        if (!prev) return null;
         const currentPlayers = [...(prev.jugadores || [])];
         if (!currentPlayers[index]) currentPlayers[index] = {};
         currentPlayers[index] = { ...currentPlayers[index], [field]: value };
@@ -344,13 +369,16 @@ export const AdminTable = () => {
   };
 
   const handleStaffChange = (type: 'suplente' | 'coach', field: string, value: string) => {
-    setEditingRow((prev: any) => ({
-        ...prev,
-        [type]: { 
-            ...(prev[type] || {}),
-            [field]: value 
-        }
-    }));
+    setEditingRow((prev: any) => {
+        if (!prev) return null;
+        return {
+            ...prev,
+            [type]: { 
+                ...(prev[type] || {}),
+                [field]: value 
+            }
+        };
+    });
   };
 
   const handleSaveEdit = async () => {
@@ -438,7 +466,7 @@ export const AdminTable = () => {
                               opacity: logoUrl ? 1 : 0.5
                             }}
                         >
-                            {!logoUrl && (row.original.nombreEquipo as string)?.[0]}
+                            {(!logoUrl && (row.original.nombreEquipo as string)?.[0]) || 'E'}
                         </Avatar>
                     </IconButton>
                 </Tooltip>
@@ -448,7 +476,7 @@ export const AdminTable = () => {
         { 
             accessorKey: "nombreEquipo", 
             header: "Equipo",
-            Cell: ({ cell }) => <Typography fontWeight="bold" color="text.primary">{cell.getValue<string>()}</Typography>
+            Cell: ({ cell }) => <Typography fontWeight="bold" color="text.primary">{cell.getValue<string>() || 'Sin nombre'}</Typography>
         },
         { 
             accessorKey: "capitan", 
@@ -457,10 +485,10 @@ export const AdminTable = () => {
                 return (
                     <Box>
                         <Typography variant="body2" fontWeight="bold" sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                            {row.original.capitan} <StarIcon sx={{ fontSize: 14, color: '#f59e0b' }} />
+                            {row.original.capitan || 'Sin capitán'} <StarIcon sx={{ fontSize: 14, color: '#f59e0b' }} />
                         </Typography>
                         <Typography variant="caption" color="text.secondary">
-                            {row.original.nombreInvocadorTeam || row.original.riotIdMain}
+                            {row.original.nombreInvocadorTeam || row.original.riotIdMain || 'Sin ID'}
                         </Typography>
                     </Box>
                 )
@@ -485,25 +513,45 @@ export const AdminTable = () => {
             header: "Comprobante",
             size: 100,
             enableEditing: false,
-            Cell: ({ cell }) => cell.getValue() ? (
+            Cell: ({ cell }) => {
+              const value = cell.getValue<string>();
+              return value ? (
                 <Tooltip title="Ver Comprobante">
                     <IconButton 
                         color="primary"
                         onClick={(e) => {
                             e.stopPropagation();
-                            setPreviewImage(getImageUrl(cell.getValue<string>()));
+                            setPreviewImage(getImageUrl(value));
                         }}
                     >
                         <ImageIcon />
                     </IconButton>
                 </Tooltip>
-            ) : <Typography variant="caption" color="text.secondary" sx={{ fontStyle: 'italic' }}>Sin archivo</Typography>
+              ) : (
+                <Typography variant="caption" color="text.secondary" sx={{ fontStyle: 'italic' }}>
+                  Sin archivo
+                </Typography>
+              );
+            }
         },
         { 
             accessorKey: "regionServidor", 
             header: "Región",
             size: 100,
-            Cell: ({ cell }) => <Chip label={cell.getValue<string>()} size="small" sx={{ bgcolor: `${themeColor}20`, color: themeColor, fontWeight: 'bold' }} />
+            Cell: ({ cell }) => {
+              const region = cell.getValue<string>();
+              return (
+                <Chip 
+                  label={region || 'N/A'} 
+                  size="small" 
+                  sx={{ 
+                    bgcolor: `${themeColor}20`, 
+                    color: themeColor, 
+                    fontWeight: 'bold' 
+                  }} 
+                />
+              );
+            }
         },
         { 
             accessorKey: "numeroContacto", 
@@ -511,18 +559,29 @@ export const AdminTable = () => {
             Cell: ({ cell }) => (
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                     <PhoneIcon sx={{ fontSize: 16, color: '#64748b' }} />
-                    <Typography variant="body2">{cell.getValue<string>()}</Typography>
+                    <Typography variant="body2">{cell.getValue<string>() || 'Sin teléfono'}</Typography>
                 </Box>
             )
         },
       ];
     } else {
       return [
-        { accessorKey: "nombre", header: "Participante", size: 200,
-          Cell: ({ cell }) => <Typography fontWeight="bold">{cell.getValue<string>()}</Typography> 
+        { 
+          accessorKey: "nombre", 
+          header: "Participante", 
+          size: 200,
+          Cell: ({ cell }) => <Typography fontWeight="bold">{cell.getValue<string>() || 'Sin nombre'}</Typography> 
         },
-        { accessorKey: "cedula", header: "Cédula" },
-        { accessorKey: "telefono", header: "Teléfono" },
+        { 
+          accessorKey: "cedula", 
+          header: "Cédula",
+          Cell: ({ cell }) => <Typography>{cell.getValue<string>() || 'N/A'}</Typography>
+        },
+        { 
+          accessorKey: "telefono", 
+          header: "Teléfono",
+          Cell: ({ cell }) => <Typography>{cell.getValue<string>() || 'N/A'}</Typography>
+        },
         {
             accessorKey: "pagoRealizado",
             header: "Pago",
@@ -542,19 +601,26 @@ export const AdminTable = () => {
             header: "Comprobante",
             size: 100,
             enableEditing: false,
-            Cell: ({ cell }) => cell.getValue() ? (
+            Cell: ({ cell }) => {
+              const value = cell.getValue<string>();
+              return value ? (
                 <Tooltip title="Ver Comprobante">
                     <IconButton 
                         color="primary"
                         onClick={(e) => {
                             e.stopPropagation();
-                            setPreviewImage(getImageUrl(cell.getValue<string>()));
+                            setPreviewImage(getImageUrl(value));
                         }}
                     >
                         <ImageIcon />
                     </IconButton>
                 </Tooltip>
-            ) : <Typography variant="caption" color="text.secondary" sx={{ fontStyle: 'italic' }}>Sin archivo</Typography>
+              ) : (
+                <Typography variant="caption" color="text.secondary" sx={{ fontStyle: 'italic' }}>
+                  Sin archivo
+                </Typography>
+              );
+            }
         },
       ];
     }
@@ -607,79 +673,212 @@ export const AdminTable = () => {
             <Button startIcon={<RefreshIcon />} variant="contained" onClick={fetchData}>Recargar</Button>
         </Box>
 
-        {isLoading ? (
-            <CircularProgress />
-        ) : (
-            <MaterialReactTable
-                columns={columns}
-                data={data}
-                enableEditing
-                getRowId={(row) => row._id}
-                enableRowActions
-                renderRowActions={({ row }) => (
-                    <Box sx={{ display: "flex", gap: "0.5rem" }}>
-                        <Tooltip title="Editar">
-                            <IconButton onClick={() => handleOpenEdit(row.original)} color="primary"><EditIcon /></IconButton>
-                        </Tooltip>
-                        <Tooltip title="Eliminar">
-                            <IconButton onClick={() => handleDelete(row.original._id)} color="error"><DeleteIcon /></IconButton>
-                        </Tooltip>
-                    </Box>
-                )}
-                renderDetailPanel={isTeamGame ? ({ row }) => {
+       {isLoading ? (
+    <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
+        <CircularProgress />
+    </Box>
+) : (
+    <MaterialReactTable
+        columns={columns}
+        data={data}
+        enableEditing
+        getRowId={(row) => row._id}
+        enableRowActions
+        renderRowActions={({ row }) => (
+            <Box sx={{ display: "flex", gap: "0.5rem" }}>
+                <Tooltip title="Editar">
+                    <IconButton 
+                        onClick={() => handleOpenEdit(row.original)} 
+                        color="primary"
+                    >
+                        <EditIcon />
+                    </IconButton>
+                </Tooltip>
+
+                <Tooltip title="Eliminar">
+                    <IconButton 
+                        onClick={() => handleDelete(row.original._id)} 
+                        color="error"
+                    >
+                        <DeleteIcon />
+                    </IconButton>
+                </Tooltip>
+            </Box>
+        )}
+
+        renderDetailPanel={
+            isTeamGame
+                ? ({ row }) => {
                     const isLoL = juegoSeleccionado === "League of Legends";
-                    
+
                     const capitanName = row.original.capitan;
-                    const capitanIgn = isLoL ? row.original.nombreInvocadorTeam : row.original.riotIdMain;
+                    const capitanIgn = isLoL
+                        ? row.original.nombreInvocadorTeam
+                        : row.original.riotIdMain;
+
                     const capitanRol = isLoL ? row.original.rolLider : "CAPITÁN";
-                    const capitanColor = isLoL && ROLE_COLORS[capitanRol] ? ROLE_COLORS[capitanRol] : '#f59e0b';
+                    const capitanColor =
+                        isLoL && ROLE_COLORS[capitanRol]
+                            ? ROLE_COLORS[capitanRol]
+                            : "#f59e0b";
+
+                    // Asegurar array
+                    const jugadores = row.original.jugadores || [];
+                    const jugadoresArray = Array.isArray(jugadores) ? jugadores : [];
 
                     return (
                         <Box sx={{ p: 2, bgcolor: "#f8fafc" }}>
-                            <Typography variant="subtitle2" sx={{ mb: 2, fontWeight:'bold', color: 'primary.main', display:'flex', alignItems:'center', gap:1 }}>
+                            <Typography
+                                variant="subtitle2"
+                                sx={{
+                                    mb: 2,
+                                    fontWeight: "bold",
+                                    color: "primary.main",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: 1
+                                }}
+                            >
                                 <GroupsIcon fontSize="small" /> ALINEACIÓN TITULAR (5 JUGADORES)
                             </Typography>
-                            <Stack direction="row" spacing={2} sx={{ flexWrap: 'wrap', gap: 2 }}>
-                                
-                                <Paper elevation={0} variant="outlined" sx={{ p: 1.5, display:'flex', alignItems:'center', gap: 1.5, bgcolor: '#fffbeb', borderColor: '#fcd34d', minWidth: 180, position: 'relative' }}>
-                                    <Chip 
-                                        label="CAPITÁN" 
-                                        size="small" 
-                                        icon={<MilitaryTechIcon sx={{ '&&': { color: 'white' } }} />}
-                                        sx={{ position: 'absolute', top: -10, right: -5, height: 20, fontSize: '0.65rem', fontWeight: 'bold', bgcolor: '#f59e0b', color: 'white', border: '1px solid white' }} 
+
+                            <Stack direction="row" spacing={2} sx={{ flexWrap: "wrap", gap: 2 }}>
+
+                                {/* CAPITÁN */}
+                                <Paper
+                                    elevation={0}
+                                    variant="outlined"
+                                    sx={{
+                                        p: 1.5,
+                                        display: "flex",
+                                        alignItems: "center",
+                                        gap: 1.5,
+                                        bgcolor: "#fffbeb",
+                                        borderColor: "#fcd34d",
+                                        minWidth: 180,
+                                        position: "relative"
+                                    }}
+                                >
+                                    <Chip
+                                        label="CAPITÁN"
+                                        size="small"
+                                        icon={<MilitaryTechIcon sx={{ "&&": { color: "white" } }} />}
+                                        sx={{
+                                            position: "absolute",
+                                            top: -10,
+                                            right: -5,
+                                            height: 20,
+                                            fontSize: "0.65rem",
+                                            fontWeight: "bold",
+                                            bgcolor: "#f59e0b",
+                                            color: "white",
+                                            border: "1px solid white"
+                                        }}
                                     />
-                                    <Avatar sx={{ width: 40, height: 40, bgcolor: capitanColor, fontWeight: 'bold', border: '2px solid white', boxShadow: 1 }}>
-                                        {capitanRol[0]}
+
+                                    <Avatar
+                                        sx={{
+                                            width: 40,
+                                            height: 40,
+                                            bgcolor: capitanColor,
+                                            fontWeight: "bold",
+                                            border: "2px solid white",
+                                            boxShadow: 1
+                                        }}
+                                    >
+                                        {capitanRol?.[0] || "C"}
                                     </Avatar>
+
                                     <Box>
-                                        <Typography variant="body2" fontWeight="bold" sx={{ lineHeight: 1.2, color: '#b45309' }}>
-                                            {capitanIgn || 'N/A'}
+                                        <Typography
+                                            variant="body2"
+                                            fontWeight="bold"
+                                            sx={{ lineHeight: 1.2, color: "#b45309" }}
+                                        >
+                                            {capitanIgn || "N/A"}
                                         </Typography>
-                                        <Typography variant="caption" color="text.secondary" sx={{ display: 'block', lineHeight: 1, fontWeight: 'bold' }}>
-                                            {capitanRol}
+
+                                        <Typography
+                                            variant="caption"
+                                            color="text.secondary"
+                                            sx={{ display: "block", lineHeight: 1, fontWeight: "bold" }}
+                                        >
+                                            {capitanRol || "CAPITÁN"}
                                         </Typography>
-                                        <Typography variant="caption" color="text.disabled" sx={{ display: 'block', fontSize: '0.65rem' }}>
-                                            {capitanName}
+
+                                        <Typography
+                                            variant="caption"
+                                            color="text.disabled"
+                                            sx={{ display: "block", fontSize: "0.65rem" }}
+                                        >
+                                            {capitanName || "Sin nombre"}
                                         </Typography>
                                     </Box>
                                 </Paper>
 
-                                {row.original.jugadores?.map((p: any, i: number) => {
-                                    const roleColor = isLoL && p.rol ? ROLE_COLORS[p.rol] : '#64748b';
+                                {/* RESTO DE JUGADORES */}
+                                {jugadoresArray.map((p: any, i: number) => {
+                                    const roleColor =
+                                        isLoL && p?.rol ? ROLE_COLORS[p.rol] : "#64748b";
+
+                                    const jugador = p || {};
+
                                     return (
-                                        <Paper key={i} elevation={0} variant="outlined" sx={{ p: 1.5, display:'flex', alignItems:'center', gap: 1.5, bgcolor: 'white', minWidth: 180 }}>
-                                            <Avatar sx={{ width: 32, height: 32, bgcolor: roleColor, fontSize: '0.8rem', fontWeight: 'bold' }}>
-                                                {p.rol ? p.rol[0] : (p.nombre?.[0] || '?')}
+                                        <Paper
+                                            key={i}
+                                            elevation={0}
+                                            variant="outlined"
+                                            sx={{
+                                                p: 1.5,
+                                                display: "flex",
+                                                alignItems: "center",
+                                                gap: 1.5,
+                                                bgcolor: "white",
+                                                minWidth: 180
+                                            }}
+                                        >
+                                            <Avatar
+                                                sx={{
+                                                    width: 32,
+                                                    height: 32,
+                                                    bgcolor: roleColor,
+                                                    fontSize: "0.8rem",
+                                                    fontWeight: "bold"
+                                                }}
+                                            >
+                                                {jugador.rol
+                                                    ? jugador.rol[0]
+                                                    : jugador.nombre?.[0] || "?"}
                                             </Avatar>
+
                                             <Box>
-                                                <Typography variant="body2" fontWeight="bold" sx={{ lineHeight: 1.2 }}>
-                                                    {p.nombreInvocador || p.riotId || 'N/A'}
+                                                <Typography
+                                                    variant="body2"
+                                                    fontWeight="bold"
+                                                    sx={{ lineHeight: 1.2 }}
+                                                >
+                                                    {jugador.nombreInvocador ||
+                                                        jugador.riotId ||
+                                                        "N/A"}
                                                 </Typography>
-                                                <Typography variant="caption" color="text.secondary" sx={{ display: 'block', lineHeight: 1 }}>
-                                                    {p.rol || 'Jugador'}
+
+                                                <Typography
+                                                    variant="caption"
+                                                    color="text.secondary"
+                                                    sx={{ display: "block", lineHeight: 1 }}
+                                                >
+                                                    {jugador.rol || "Jugador"}
                                                 </Typography>
-                                                <Typography variant="caption" color="text.disabled" sx={{ display: 'block', fontSize: '0.65rem' }}>
-                                                    {p.nombre}
+
+                                                <Typography
+                                                    variant="caption"
+                                                    color="text.disabled"
+                                                    sx={{
+                                                        display: "block",
+                                                        fontSize: "0.65rem"
+                                                    }}
+                                                >
+                                                    {jugador.nombre || "Sin nombre"}
                                                 </Typography>
                                             </Box>
                                         </Paper>
@@ -688,9 +887,12 @@ export const AdminTable = () => {
                             </Stack>
                         </Box>
                     );
-                } : undefined}
-            />
-        )}
+                }
+                : undefined
+        }
+    />
+)}
+
 
         {/* MODAL DE IMAGEN */}
         <Dialog open={!!previewImage} onClose={() => setPreviewImage(null)} maxWidth="md">
@@ -703,7 +905,7 @@ export const AdminTable = () => {
         <Dialog open={openEditModal} onClose={() => setOpenEditModal(false)} fullWidth maxWidth="lg">
             <DialogTitle sx={{ borderBottom: '1px solid #e2e8f0', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: 1 }}>
                 <EditIcon color="primary" />
-                Editar Registro: {editingRow?.nombreEquipo || editingRow?.nombre}
+                Editar Registro: {editingRow?.nombreEquipo || editingRow?.nombre || 'Sin nombre'}
             </DialogTitle>
             <DialogContent sx={{ pt: 3, pb: 4, bgcolor: '#f8fafc' }}>
                 {editingRow && (
@@ -737,7 +939,7 @@ export const AdminTable = () => {
                                         <input type="file" hidden accept="image/*" onChange={(e) => handleFileSelect(e, 'comprobante')} />
                                     </Button>
                                     {(newComprobanteBase64 || editingRow.comprobantePago) ? (
-                                        <Button variant="contained" color="inherit" size="small" startIcon={<ImageIcon />} onClick={() => setPreviewImage(newComprobanteBase64 || getImageUrl(editingRow.comprobantePago))} sx={{ bgcolor: 'white', color: 'text.primary', border: '1px solid #e5e7eb' }}>Ver</Button>
+                                        <Button variant="contained" color="inherit" size="small" startIcon={<ImageIcon />} onClick={() => setPreviewImage(newComprobanteBase64 || getImageUrl(editingRow.comprobantePago || ''))} sx={{ bgcolor: 'white', color: 'text.primary', border: '1px solid #e5e7eb' }}>Ver</Button>
                                     ) : <Chip label="Sin archivo" size="small" variant="outlined" color="warning" />}
                                 </Stack>
                             </Stack>
@@ -786,7 +988,7 @@ export const AdminTable = () => {
                                             {/* PREVIEW DEL LOGO */}
                                             <Box sx={{ position: 'relative' }}>
                                                 <Avatar 
-                                                    src={newLogoBase64 || getImageUrl(editingRow.logoURL)} 
+                                                    src={newLogoBase64 || getImageUrl(editingRow.logoURL || '')} 
                                                     alt="Logo Preview" 
                                                     variant="rounded"
                                                     sx={{ 
@@ -796,7 +998,7 @@ export const AdminTable = () => {
                                                         bgcolor: '#1f2937'
                                                     }}
                                                 >
-                                                    {editingRow.nombreEquipo?.[0]}
+                                                    {editingRow.nombreEquipo?.[0] || 'E'}
                                                 </Avatar>
                                                 
                                                 {/* BOTÓN PARA ELIMINAR LOGO */}
@@ -843,7 +1045,7 @@ export const AdminTable = () => {
                                                         variant="outlined" 
                                                         size="small" 
                                                         startIcon={<ImageIcon />} 
-                                                        onClick={() => setPreviewImage(newLogoBase64 || getImageUrl(editingRow.logoURL))}
+                                                        onClick={() => setPreviewImage(newLogoBase64 || getImageUrl(editingRow.logoURL || ''))}
                                                     >
                                                         Ver
                                                     </Button>
@@ -912,19 +1114,22 @@ export const AdminTable = () => {
                                         <GroupsIcon color="primary" /> Alineación (Jugadores)
                                     </Typography>
                                     <Stack spacing={2}>
-                                        {editingRow.jugadores?.map((p: any, idx: number) => (
-                                            <Box key={idx} sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: 'repeat(4, 1fr)' }, gap: 2, p: 2, bgcolor: '#fff', borderRadius: 1, border: '1px solid #e2e8f0' }}>
-                                                <Typography sx={{ display: { md: 'none' }, fontWeight: 'bold' }}>Jugador {idx + 1}</Typography>
-                                                <TextField label="Nombre Real" value={p.nombre || ''} onChange={(e) => handlePlayerChange(idx, 'nombre', e.target.value)} size="small" fullWidth />
-                                                <TextField label="Cédula" value={p.cedula || ''} onChange={(e) => handlePlayerChange(idx, 'cedula', e.target.value)} size="small" fullWidth />
-                                                <TextField label={juegoSeleccionado === "Valorant" ? "Riot ID" : "Invocador"} value={p.riotId || p.nombreInvocador || ''} onChange={(e) => handlePlayerChange(idx, juegoSeleccionado === "Valorant" ? 'riotId' : 'nombreInvocador', e.target.value)} size="small" fullWidth />
-                                                {juegoSeleccionado === "League of Legends" && (
-                                                    <TextField label="Rol" value={p.rol || ''} onChange={(e) => handlePlayerChange(idx, 'rol', e.target.value)} size="small" select fullWidth>
-                                                        {ROLES_LOL.map(r => <MenuItem key={r} value={r}>{r}</MenuItem>)}
-                                                    </TextField>
-                                                )}
-                                            </Box>
-                                        ))}
+                                        {Array.isArray(editingRow.jugadores) && editingRow.jugadores.map((p: any, idx: number) => {
+                                            const jugador = p || {};
+                                            return (
+                                                <Box key={idx} sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: 'repeat(4, 1fr)' }, gap: 2, p: 2, bgcolor: '#fff', borderRadius: 1, border: '1px solid #e2e8f0' }}>
+                                                    <Typography sx={{ display: { md: 'none' }, fontWeight: 'bold' }}>Jugador {idx + 1}</Typography>
+                                                    <TextField label="Nombre Real" value={jugador.nombre || ''} onChange={(e) => handlePlayerChange(idx, 'nombre', e.target.value)} size="small" fullWidth />
+                                                    <TextField label="Cédula" value={jugador.cedula || ''} onChange={(e) => handlePlayerChange(idx, 'cedula', e.target.value)} size="small" fullWidth />
+                                                    <TextField label={juegoSeleccionado === "Valorant" ? "Riot ID" : "Invocador"} value={jugador.riotId || jugador.nombreInvocador || ''} onChange={(e) => handlePlayerChange(idx, juegoSeleccionado === "Valorant" ? 'riotId' : 'nombreInvocador', e.target.value)} size="small" fullWidth />
+                                                    {juegoSeleccionado === "League of Legends" && (
+                                                        <TextField label="Rol" value={jugador.rol || ''} onChange={(e) => handlePlayerChange(idx, 'rol', e.target.value)} size="small" select fullWidth>
+                                                            {ROLES_LOL.map(r => <MenuItem key={r} value={r}>{r}</MenuItem>)}
+                                                        </TextField>
+                                                    )}
+                                                </Box>
+                                            );
+                                        })}
                                     </Stack>
                                 </Paper>
 

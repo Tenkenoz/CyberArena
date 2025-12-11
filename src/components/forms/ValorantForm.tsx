@@ -86,6 +86,13 @@ export const ValorantForm = ({ onClose }: { onClose: () => void }) => {
   const [yaDeposito, setYaDeposito] = useState(false);
   const [comprobante, setComprobante] = useState<string | null>(null); // Base64
 
+  // --- FUNCIÓN PARA ABRIR EL PDF ---
+  const abrirReglamentoPDF = () => {
+    // Asegúrate de que el PDF esté en: public/Terminos_y_Condiciones.pdf
+    const pdfUrl = '/Terminos_y_Condiciones.pdf';
+    window.open(pdfUrl, '_blank', 'noopener,noreferrer');
+  };
+
   // --- UTILIDADES ---
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
@@ -503,7 +510,15 @@ export const ValorantForm = ({ onClose }: { onClose: () => void }) => {
         <div className="flex items-start space-x-3 p-4 bg-muted/20 rounded-lg border border-border/50">
             <Checkbox id="aceptaReglas" checked={aceptaReglas} onCheckedChange={(c) => setAceptaReglas(!!c)} required disabled={loading} className="mt-0.5" />
             <Label htmlFor="aceptaReglas" className="cursor-pointer text-sm leading-snug">
-              He leído y acepto las <a href="#" className="text-primary hover:underline font-bold">reglas del torneo</a>. Confirmo que toda la información es correcta.
+              He leído y acepto las{" "}
+              <button
+                type="button"
+                onClick={abrirReglamentoPDF}
+                className="text-primary hover:underline font-bold focus:outline-none"
+              >
+                reglas del torneo
+              </button>
+              . Confirmo que toda la información es correcta.
             </Label>
         </div>
       </div>
