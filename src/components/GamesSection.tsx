@@ -15,6 +15,7 @@ const lolTournamentDetails = [
   { label: 'Modalidad', value: 'Online' },
   { label: 'Fecha', value: '26 y 27 de Diciembre' },
   { label: 'Formato', value: 'Torneo' },
+  { label: 'Servidor', value: 'LAN' },
   { label: 'Estructura', value: 'BO1 (Eliminación Directa)' },
   { label: 'Fases Finales', value: 'Cuartos a Final BO3' },
   { label: 'Modo de Juego', value: 'Grieta del Invocador 5v5' },
@@ -50,6 +51,7 @@ const games = [
     details: [
       ...lolTournamentDetails.slice(0, 2),
       { label: 'Modo de Juego', value: '5vs5' },
+      { label: 'Servidor', value: 'Bogota' },
       { label: 'Fecha', value: 'Diciembre 3 y 4 de Enero' },
       { label: 'Formato', value: 'B01 Eliminacion Directa' },
       { label: 'Fases Finales', value: 'Cuartos a Final BO3' },
