@@ -1,7 +1,7 @@
 import AlhajilloInteractive from '@/assets/Auspiciantes/AlhajilloInteractive_logo.png';
 import NatuLove from '@/assets/Auspiciantes/NatuLove_logo.jpeg';
 import Panda from '@/assets/Auspiciantes/Panda_logo.jpeg';
-import Metaconstruec from '@/assets/Auspiciantes/Metaconstruec_logo.png';
+import Metaconstruec from '@/assets/Auspiciantes/Metaconstruec_logo.jpeg';
 
 const SPONSORS = [
   { name: "AlhajilloInteractive", logoSrc: AlhajilloInteractive, link: "https://www.alhajillo.com/?utm_source=ig&utm_medium=social&utm_content=link_in_bio&fbclid=PAZXh0bgNhZW0CMTEAc3J0YwZhcHBfaWQMMjU2MjgxMDQwNTU4AAGn2a-rCp4TW640hxhkzaYOCjEKAAncVTQER0NBKXIzqP9FqWsICbPM0IvJZJg_aem_H9ykVNnUyxTbnafb6HMgXA" },
