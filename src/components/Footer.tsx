@@ -1,12 +1,13 @@
 import AlhajilloInteractive from '@/assets/Auspiciantes/AlhajilloInteractive_logo.png';
 import NatuLove from '@/assets/Auspiciantes/NatuLove_logo.jpeg';
 import Panda from '@/assets/Auspiciantes/Panda_logo.jpeg';
-
+import Metaconstruec from '@/assets/Auspiciantes/Metaconstruec_logo.png';
 
 const SPONSORS = [
   { name: "AlhajilloInteractive", logoSrc: AlhajilloInteractive, link: "https://www.alhajillo.com/?utm_source=ig&utm_medium=social&utm_content=link_in_bio&fbclid=PAZXh0bgNhZW0CMTEAc3J0YwZhcHBfaWQMMjU2MjgxMDQwNTU4AAGn2a-rCp4TW640hxhkzaYOCjEKAAncVTQER0NBKXIzqP9FqWsICbPM0IvJZJg_aem_H9ykVNnUyxTbnafb6HMgXA" },
   { name: "NatuLove", logoSrc: NatuLove, link: "https://www.instagram.com/natulove8/" },
   { name: "Panda", logoSrc: Panda, link: "https://pandamangasecuador.com/store-anime-manga-otaku/?srsltid=AfmBOooH2WhEmKOxs-MaHRgne7-yI95wYgCoQjEDfmjqK7fLS8_dOr6t" },
+  { name: "Metaconstruec", logoSrc: Metaconstruec, link: "https://linktr.ee/psi.stalinquezada?utm_source=linktree_profile_share&ltsid=496842a9-099a-4708-9d60-a42285fedcab" },
 ];
 
 export const Footer = () => {
