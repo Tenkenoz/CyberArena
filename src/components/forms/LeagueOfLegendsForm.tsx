@@ -116,8 +116,8 @@ export const LeagueOfLegendsForm: React.FC<{ onClose: () => void }> = ({ onClose
   const handleLogoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-        if (!['image/jpeg', 'image/png', 'image/jpg'].includes(file.type) || file.size > 5 * 1024 * 1024) {
-            toast.error('Logo: Solo JPG/PNG, máx 5MB.');
+        if (!['image/jpeg', 'image/png', 'image/jpg'].includes(file.type) || file.size > 0.80 * 1024 * 1024) {
+            toast.error('Logo: Solo JPG/PNG, máx 0.80 MB.');
             e.target.value = '';
             setTeamData(prev => ({ ...prev, logoEquipo: null }));
             return;
@@ -134,8 +134,8 @@ export const LeagueOfLegendsForm: React.FC<{ onClose: () => void }> = ({ onClose
   const handleComprobanteChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-        if (!['image/jpeg', 'image/png', 'image/jpg'].includes(file.type) || file.size > 5 * 1024 * 1024) {
-            toast.error('Comprobante: Solo JPG/PNG, máx 5MB.');
+        if (!['image/jpeg', 'image/png', 'image/jpg'].includes(file.type) || file.size > 0.80 * 1024 * 1024) {
+            toast.error('Comprobante: Solo JPG/PNG, máx 0.80 MB.');
             e.target.value = '';
             setComprobante(null);
             return;

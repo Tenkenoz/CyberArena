@@ -94,8 +94,8 @@ export const GenericGameForm = ({ gameName, onClose }: GenericGameFormProps) => 
             setComprobante(null);
             return;
         }
-        if (file.size > 5 * 1024 * 1024) {
-            toast.error('La imagen es muy pesada. Máximo 5MB.');
+        if (file.size > 0.80 * 1024 * 1024) {
+            toast.error('La imagen es muy pesada. Máximo 0.80 MB.');
             e.target.value = '';
             setComprobante(null);
             return;

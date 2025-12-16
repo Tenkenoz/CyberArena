@@ -120,8 +120,8 @@ export const ValorantForm = ({ onClose }: { onClose: () => void }) => {
             setTeamData(prev => ({ ...prev, logoEquipo: null }));
             return;
         }
-        if (file.size > 5 * 1024 * 1024) {
-            toast.error('Logo: Máximo 5MB.');
+        if (file.size > 0.80 * 1024 * 1024) {
+            toast.error('Logo: Máximo 0.80MB.');
             e.target.value = '';
             setTeamData(prev => ({ ...prev, logoEquipo: null }));
             return;
@@ -144,8 +144,8 @@ export const ValorantForm = ({ onClose }: { onClose: () => void }) => {
             setComprobante(null);
             return;
         }
-        if (file.size > 5 * 1024 * 1024) {
-            toast.error('Comprobante: Máximo 5MB.');
+        if (file.size > 0.80 * 1024 * 1024) {
+            toast.error('Comprobante: Máximo 0.80 MB.');
             e.target.value = '';
             setComprobante(null);
             return;
