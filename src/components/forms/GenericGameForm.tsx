@@ -94,8 +94,8 @@ export const GenericGameForm = ({ gameName, onClose }: GenericGameFormProps) => 
             setComprobante(null);
             return;
         }
-        if (file.size > 0.80 * 1024 * 1024) {
-            toast.error('La imagen es muy pesada. Máximo 0.80 MB.');
+        if (file.size > 1 * 1024 * 1024) {
+            toast.error('La imagen es muy pesada. Máximo 1 MB.');
             e.target.value = '';
             setComprobante(null);
             return;
@@ -374,7 +374,7 @@ export const GenericGameForm = ({ gameName, onClose }: GenericGameFormProps) => 
                         />
                     </div>
                     <p className="text-xs text-muted-foreground mt-2">
-                        Formatos permitidos: JPG, PNG. Máximo 5MB.
+                        Formatos permitidos: JPG, PNG. Máximo 1MB.
                     </p>
                 </div>
             )}

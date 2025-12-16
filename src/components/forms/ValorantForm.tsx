@@ -120,8 +120,8 @@ export const ValorantForm = ({ onClose }: { onClose: () => void }) => {
             setTeamData(prev => ({ ...prev, logoEquipo: null }));
             return;
         }
-        if (file.size > 0.80 * 1024 * 1024) {
-            toast.error('Logo: Máximo 0.80MB.');
+        if (file.size > 1 * 1024 * 1024) {
+            toast.error('Logo: Máximo 1MB.');
             e.target.value = '';
             setTeamData(prev => ({ ...prev, logoEquipo: null }));
             return;
@@ -144,8 +144,8 @@ export const ValorantForm = ({ onClose }: { onClose: () => void }) => {
             setComprobante(null);
             return;
         }
-        if (file.size > 0.80 * 1024 * 1024) {
-            toast.error('Comprobante: Máximo 0.80 MB.');
+        if (file.size > 1 * 1024 * 1024) {
+            toast.error('Comprobante: Máximo 1 MB.');
             e.target.value = '';
             setComprobante(null);
             return;
@@ -492,7 +492,7 @@ export const ValorantForm = ({ onClose }: { onClose: () => void }) => {
                     <div className="flex items-center gap-3">
                         <Input type="file" accept="image/*" onChange={handleComprobanteChange} disabled={loading} className="cursor-pointer bg-background file:text-primary file:font-medium" />
                     </div>
-                    <p className="text-xs text-muted-foreground mt-2">Formatos: JPG, PNG. Máximo 5MB.</p>
+                    <p className="text-xs text-muted-foreground mt-2">Formatos: JPG, PNG. Máximo 1MB.</p>
                 </div>
             )}
         </div>
