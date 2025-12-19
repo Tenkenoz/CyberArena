@@ -107,7 +107,7 @@ const games = [
       { label: 'Finales', value: 'Elimacion doble B05' },
       { label: 'Precio', value: '$3 por persona' },
     ],
-    limitDate: '2025-12-21', // 1 día antes
+    limitDate: '2025-12-20', // 1 día antes
   },
 ];
 
