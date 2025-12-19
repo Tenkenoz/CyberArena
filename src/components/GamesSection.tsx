@@ -39,7 +39,7 @@ const games = [
     isMain: false,
     image: lolLogo,
     details: lolTournamentDetails,
-    limitDate: '2025-12-25', // 1 día antes
+    limitDate: '2025-12-27', // 1 día antes
   },
   {
     id: 'valorant',
@@ -57,7 +57,7 @@ const games = [
       { label: 'Fases Finales', value: 'Cuartos a Final BO3' },
       { label: 'Precio', value: '$3 por persona o $15 por equipo' },
     ],
-    limitDate: '2026-01-02', // 1 día antes
+    limitDate: '2026-01-04', // 1 día antes
   },
   {
     id: 'tft',
@@ -74,7 +74,7 @@ const games = [
       { label: 'Modo de Juego', value: 'TFT Estándar' },
       { label: 'Precio', value: '$3 por persona' },
     ],
-    limitDate: '2025-12-27', // 1 día antes
+    limitDate: '2025-12-29', // 1 día antes
   },
   {
     id: 'chess',
@@ -90,7 +90,7 @@ const games = [
       { label: 'Formato', value: 'Torneo Suizo' },
       { label: 'Precio', value: '$3 por persona' },
     ],
-    limitDate: '2025-12-28', // 1 día antes
+    limitDate: '2025-12-30', // 1 día antes
   },
   {
     id: 'clash-royale',
@@ -107,7 +107,7 @@ const games = [
       { label: 'Finales', value: 'Elimacion doble B05' },
       { label: 'Precio', value: '$3 por persona' },
     ],
-    limitDate: '2025-12-19', // 1 día antes
+    limitDate: '2025-12-21', // 1 día antes
   },
 ];
 
