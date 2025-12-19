@@ -52,7 +52,7 @@ const games = [
       ...lolTournamentDetails.slice(0, 2),
       { label: 'Modo de Juego', value: '5vs5' },
       { label: 'Servidor', value: 'Bogota' },
-      { label: 'Fecha', value: 'Diciembre 3 y 4 de Enero' },
+      { label: 'Fecha', value: '3 y 4 de Enero' },
       { label: 'Formato', value: 'B01 Eliminacion Directa' },
       { label: 'Fases Finales', value: 'Cuartos a Final BO3' },
       { label: 'Precio', value: '$3 por persona o $15 por equipo' },
