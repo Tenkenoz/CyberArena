@@ -15,6 +15,15 @@ export const Navbar = ({ onInscribirme }: NavbarProps) => {
           <a href="#inicio" className="text-muted-foreground hover:text-foreground transition-colors">
             Inicio
           </a>
+          <a href="#noticias" className="text-muted-foreground hover:text-foreground transition-colors">
+            Noticias
+          </a>
+          <a href="#faq" className="text-muted-foreground hover:text-foreground transition-colors">
+            FAQ
+          </a>
+          <a href="#contactos" className="text-muted-foreground hover:text-foreground transition-colors">
+            Contactos
+          </a>
           <Button variant="hero" size="sm" onClick={onInscribirme}>
             Inscribirme
           </Button>
