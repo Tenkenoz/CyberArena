@@ -27,7 +27,10 @@ const validarCedulaEcuador = (cedula: string): boolean => {
 
 const PHONE_REGEX = /^(09\d{8}|0[2-8]\d{7})$/;
 const NAME_REGEX = /^[A-Za-zÑñÁáÉéÍíÓóÚúüÜ\s]{2,}$/;
-const SUMMONER_NAME_REGEX = /^[A-Za-z0-9\s]{3,16}$/;
+// Riot ID format: GameName#TAG
+// GameName: 3-16 caracteres alfanuméricos (puede incluir espacios)
+// Tagline: 3-5 caracteres alfanuméricos precedidos por #
+const SUMMONER_NAME_REGEX = /^[A-Za-z0-9\s]{3,16}#[A-Za-z0-9]{3,5}$/;
 
 // --- CONFIG API ---
 const getApiUrl = () => {
@@ -84,7 +87,7 @@ export const LeagueOfLegendsForm: React.FC<{ onClose: () => void }> = ({ onClose
   const [showCoach, setShowCoach] = useState(false);
   const [participadoTorneo, setParticipadoTorneo] = useState<string>('');
   const [aceptaReglas, setAceptaReglas] = useState(false);
-  
+
   const [yaDeposito, setYaDeposito] = useState(false);
   const [comprobante, setComprobante] = useState<string | null>(null); // Base64 string
 
@@ -116,36 +119,36 @@ export const LeagueOfLegendsForm: React.FC<{ onClose: () => void }> = ({ onClose
   const handleLogoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-        if (!['image/jpeg', 'image/png', 'image/jpg'].includes(file.type) || file.size > 1 * 1024 * 1024) {
-            toast.error('Logo: Solo JPG/PNG, máx 1 MB.');
-            e.target.value = '';
-            setTeamData(prev => ({ ...prev, logoEquipo: null }));
-            return;
-        }
-        try {
-            const base64 = await convertToBase64(file);
-            setTeamData(prev => ({ ...prev, logoEquipo: base64 }));
-        } catch (err) {
-            toast.error('Error al procesar el logo');
-        }
+      if (!['image/jpeg', 'image/png', 'image/jpg'].includes(file.type) || file.size > 1 * 1024 * 1024) {
+        toast.error('Logo: Solo JPG/PNG, máx 1 MB.');
+        e.target.value = '';
+        setTeamData(prev => ({ ...prev, logoEquipo: null }));
+        return;
+      }
+      try {
+        const base64 = await convertToBase64(file);
+        setTeamData(prev => ({ ...prev, logoEquipo: base64 }));
+      } catch (err) {
+        toast.error('Error al procesar el logo');
+      }
     }
   };
 
   const handleComprobanteChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-        if (!['image/jpeg', 'image/png', 'image/jpg'].includes(file.type) || file.size > 1 * 1024 * 1024) {
-            toast.error('Comprobante: Solo JPG/PNG, máx 1 MB.');
-            e.target.value = '';
-            setComprobante(null);
-            return;
-        }
-        try {
-            const base64 = await convertToBase64(file);
-            setComprobante(base64);
-        } catch (err) {
-            toast.error('Error al procesar el comprobante');
-        }
+      if (!['image/jpeg', 'image/png', 'image/jpg'].includes(file.type) || file.size > 1 * 1024 * 1024) {
+        toast.error('Comprobante: Solo JPG/PNG, máx 1 MB.');
+        e.target.value = '';
+        setComprobante(null);
+        return;
+      }
+      try {
+        const base64 = await convertToBase64(file);
+        setComprobante(base64);
+      } catch (err) {
+        toast.error('Error al procesar el comprobante');
+      }
     }
   };
 
@@ -173,8 +176,8 @@ export const LeagueOfLegendsForm: React.FC<{ onClose: () => void }> = ({ onClose
       return false;
     }
     if (invocadorLimpio && !SUMMONER_NAME_REGEX.test(invocadorLimpio)) {
-        toast.error(`[${prefix}] Invocador inválido (3-16 caracteres).`);
-        return false;
+      toast.error(`[${prefix}] Riot ID inválido. Formato: GameName#TAG (ej: Faker#KR1)`);
+      return false;
     }
     return true;
   };
@@ -182,19 +185,19 @@ export const LeagueOfLegendsForm: React.FC<{ onClose: () => void }> = ({ onClose
   const validateForm = () => {
     if (!teamData.nombreEquipo.trim()) return toast.error('Falta nombre del equipo') && false;
     if (!teamData.regionServidor.trim()) return toast.error('Falta región') && false;
-    
+
     // Capitán
     if (!NAME_REGEX.test(teamData.capitan.trim())) return toast.error('Nombre del Capitán inválido') && false;
     if (!teamData.rolLider) return toast.error('Falta rol del Capitán') && false;
     const contacto = teamData.numeroContacto.replace(/\s/g, '');
     if (!PHONE_REGEX.test(contacto)) return toast.error('Teléfono de contacto inválido') && false;
-    if (!SUMMONER_NAME_REGEX.test(teamData.nombreInvocador.trim())) return toast.error('Invocador del Capitán inválido') && false;
+    if (!SUMMONER_NAME_REGEX.test(teamData.nombreInvocador.trim())) return toast.error('Riot ID del Capitán inválido. Formato: GameName#TAG') && false;
 
     // Jugadores
     for (let i = 0; i < players.length; i++) {
-        if (!players[i].rol) return toast.error(`Falta rol Jugador ${i+1}`) && false;
-        if (!players[i].cedula) return toast.error(`Falta cédula Jugador ${i+1}`) && false;
-        if (!validatePlayerFields(players[i], `Jugador ${i+1}`)) return false;
+      if (!players[i].rol) return toast.error(`Falta rol Jugador ${i + 1}`) && false;
+      if (!players[i].cedula) return toast.error(`Falta cédula Jugador ${i + 1}`) && false;
+      if (!validatePlayerFields(players[i], `Jugador ${i + 1}`)) return false;
     }
 
     // Roles únicos
@@ -204,8 +207,8 @@ export const LeagueOfLegendsForm: React.FC<{ onClose: () => void }> = ({ onClose
     // Opcionales
     if (showSuplente && !validatePlayerFields(suplente, 'Suplente')) return false;
     if (showCoach) {
-        if (!coach.nombre.trim() || !coach.cedula.trim()) return toast.error('Coach requiere Nombre y Cédula') && false;
-        if (!validatePlayerFields({ ...coach, nombreInvocador: 'SKIP' }, 'Coach')) return false; 
+      if (!coach.nombre.trim() || !coach.cedula.trim()) return toast.error('Coach requiere Nombre y Cédula') && false;
+      if (!validatePlayerFields({ ...coach, nombreInvocador: 'SKIP' }, 'Coach')) return false;
     }
 
     if (!participadoTorneo) return toast.error('Responde la encuesta de participación.') && false;
@@ -242,7 +245,7 @@ export const LeagueOfLegendsForm: React.FC<{ onClose: () => void }> = ({ onClose
       const res = await fetch(`${API_BASE_URL}/api/lol/inscripcion`, {
         method: 'POST',
         headers: {
-            'Content-Type': 'application/json'
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify(payload),
       });
@@ -256,7 +259,7 @@ export const LeagueOfLegendsForm: React.FC<{ onClose: () => void }> = ({ onClose
       }
 
       toast.success('¡Inscripción Exitosa!');
-      
+
       // Reset
       setTeamData({ nombreEquipo: '', regionServidor: '', logoEquipo: null, capitan: '', rolLider: '', numeroContacto: '', nombreInvocador: '' });
       setPlayers(Array(4).fill({ nombre: '', rol: '', cedula: '', nombreInvocador: '' }));
@@ -268,7 +271,7 @@ export const LeagueOfLegendsForm: React.FC<{ onClose: () => void }> = ({ onClose
       setAceptaReglas(false);
       setYaDeposito(false);
       setComprobante(null);
-      
+
       onClose();
 
     } catch (error) {
@@ -281,7 +284,7 @@ export const LeagueOfLegendsForm: React.FC<{ onClose: () => void }> = ({ onClose
 
   return (
     <form onSubmit={handleSubmit} className="space-y-8 max-h-[75vh] overflow-y-auto pr-3 pl-1">
-      
+
       {/* SECCIÓN 1: DATOS DEL EQUIPO */}
       <div className="space-y-5">
         <h3 className="font-display text-lg font-bold text-primary flex items-center gap-2 border-b border-border pb-2">
@@ -292,13 +295,13 @@ export const LeagueOfLegendsForm: React.FC<{ onClose: () => void }> = ({ onClose
           <div className="space-y-2">
             <Label htmlFor="nombreEquipo">Nombre del Equipo</Label>
             <div className="relative">
-                <Users className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                <Input
-                  id="nombreEquipo"
-                  value={teamData.nombreEquipo}
-                  onChange={(e) => setTeamData({ ...teamData, nombreEquipo: e.target.value })}
-                  required disabled={loading} className="pl-9" placeholder="Ej: T1 Faker"
-                />
+              <Users className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+              <Input
+                id="nombreEquipo"
+                value={teamData.nombreEquipo}
+                onChange={(e) => setTeamData({ ...teamData, nombreEquipo: e.target.value })}
+                required disabled={loading} className="pl-9" placeholder="Ej: T1 Faker"
+              />
             </div>
           </div>
 
@@ -316,29 +319,29 @@ export const LeagueOfLegendsForm: React.FC<{ onClose: () => void }> = ({ onClose
           <div className="space-y-2">
             <Label htmlFor="logoEquipo">Logo (Opcional)</Label>
             <div className="flex items-center gap-2">
-                <Input
-                  id="logoEquipo" type="file" accept="image/png, image/jpeg, image/jpg"
-                  onChange={handleLogoChange}
-                  disabled={loading}
-                  className="cursor-pointer file:text-primary"
-                />
+              <Input
+                id="logoEquipo" type="file" accept="image/png, image/jpeg, image/jpg"
+                onChange={handleLogoChange}
+                disabled={loading}
+                className="cursor-pointer file:text-primary"
+              />
             </div>
           </div>
 
           <div className="space-y-2">
             <Label htmlFor="capitan">Capitán (Nombre Real)</Label>
             <div className="relative">
-                <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                <Input
-                  id="capitan"
-                  value={teamData.capitan}
-                  onChange={(e) => setTeamData({ ...teamData, capitan: e.target.value.replace(/[^a-zA-Z\s]/g, '') })}
-                  required disabled={loading} className="pl-9"
-                />
+              <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+              <Input
+                id="capitan"
+                value={teamData.capitan}
+                onChange={(e) => setTeamData({ ...teamData, capitan: e.target.value.replace(/[^a-zA-Z\s]/g, '') })}
+                required disabled={loading} className="pl-9"
+              />
             </div>
           </div>
 
-           <div className="space-y-2">
+          <div className="space-y-2">
             <Label htmlFor="rolLider">Rol del Capitán</Label>
             <select
               id="rolLider"
@@ -355,26 +358,26 @@ export const LeagueOfLegendsForm: React.FC<{ onClose: () => void }> = ({ onClose
           <div className="space-y-2">
             <Label htmlFor="numeroContacto">Teléfono de Contacto</Label>
             <div className="relative">
-                <Phone className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                <Input
-                  id="numeroContacto" type="tel" maxLength={10}
-                  value={teamData.numeroContacto}
-                  onChange={(e) => setTeamData({ ...teamData, numeroContacto: e.target.value.replace(/\D/g, '') })}
-                  required disabled={loading} className="pl-9" placeholder="09..."
-                />
+              <Phone className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+              <Input
+                id="numeroContacto" type="tel" maxLength={10}
+                value={teamData.numeroContacto}
+                onChange={(e) => setTeamData({ ...teamData, numeroContacto: e.target.value.replace(/\D/g, '') })}
+                required disabled={loading} className="pl-9" placeholder="09..."
+              />
             </div>
           </div>
 
           <div className="space-y-2 md:col-span-2">
             <Label htmlFor="nombreInvocadorTeam">Invocador Capitán (LoL)</Label>
             <div className="relative">
-                <Gamepad2 className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                <Input
-                  id="nombreInvocadorTeam"
-                  value={teamData.nombreInvocador}
-                  onChange={(e) => setTeamData({ ...teamData, nombreInvocador: e.target.value })}
-                  required disabled={loading} className="pl-9" placeholder="Nombre#TAG"
-                />
+              <Gamepad2 className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+              <Input
+                id="nombreInvocadorTeam"
+                value={teamData.nombreInvocador}
+                onChange={(e) => setTeamData({ ...teamData, nombreInvocador: e.target.value })}
+                required disabled={loading} className="pl-9" placeholder="Faker#KR1"
+              />
             </div>
           </div>
         </div>
@@ -385,7 +388,7 @@ export const LeagueOfLegendsForm: React.FC<{ onClose: () => void }> = ({ onClose
         <h3 className="font-display text-xl font-bold text-primary border-b border-border pb-2">
           Alineación Titular
         </h3>
-        
+
         {players.map((player, index) => (
           <div key={index} className="p-4 bg-muted/20 rounded-lg border border-border space-y-3">
             <h4 className="font-semibold text-sm uppercase text-muted-foreground">Jugador {index + 1}</h4>
@@ -436,105 +439,105 @@ export const LeagueOfLegendsForm: React.FC<{ onClose: () => void }> = ({ onClose
       <div className="space-y-4">
         <h3 className="font-display text-lg font-bold text-primary border-b border-border pb-2">Staff & Suplentes</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-3 p-4 border rounded-lg">
-                <div className="flex items-center gap-2">
-                    <Checkbox id="showSuplente" checked={showSuplente} onCheckedChange={(c) => setShowSuplente(!!c)} disabled={loading} />
-                    <Label htmlFor="showSuplente" className="cursor-pointer">Suplente</Label>
-                </div>
-                {showSuplente && (
-                    <div className="space-y-2 animate-in fade-in">
-                        <Input placeholder="Nombre" value={suplente.nombre} onChange={(e) => setSuplente({...suplente, nombre: e.target.value})} disabled={loading} />
-                        <Input placeholder="Cédula" maxLength={10} value={suplente.cedula} onChange={(e) => setSuplente({...suplente, cedula: e.target.value})} disabled={loading} />
-                        <Input placeholder="Invocador" value={suplente.nombreInvocador} onChange={(e) => setSuplente({...suplente, nombreInvocador: e.target.value})} disabled={loading} />
-                        <select className="flex h-10 w-full rounded-md border bg-background px-3 text-sm" value={suplente.rol} onChange={(e) => setSuplente({...suplente, rol: e.target.value})} disabled={loading}>
-                            <option value="">Rol</option>
-                            {roles.map(r => <option key={r} value={r}>{r}</option>)}
-                        </select>
-                    </div>
-                )}
+          <div className="space-y-3 p-4 border rounded-lg">
+            <div className="flex items-center gap-2">
+              <Checkbox id="showSuplente" checked={showSuplente} onCheckedChange={(c) => setShowSuplente(!!c)} disabled={loading} />
+              <Label htmlFor="showSuplente" className="cursor-pointer">Suplente</Label>
             </div>
+            {showSuplente && (
+              <div className="space-y-2 animate-in fade-in">
+                <Input placeholder="Nombre" value={suplente.nombre} onChange={(e) => setSuplente({ ...suplente, nombre: e.target.value })} disabled={loading} />
+                <Input placeholder="Cédula" maxLength={10} value={suplente.cedula} onChange={(e) => setSuplente({ ...suplente, cedula: e.target.value })} disabled={loading} />
+                <Input placeholder="Invocador" value={suplente.nombreInvocador} onChange={(e) => setSuplente({ ...suplente, nombreInvocador: e.target.value })} disabled={loading} />
+                <select className="flex h-10 w-full rounded-md border bg-background px-3 text-sm" value={suplente.rol} onChange={(e) => setSuplente({ ...suplente, rol: e.target.value })} disabled={loading}>
+                  <option value="">Rol</option>
+                  {roles.map(r => <option key={r} value={r}>{r}</option>)}
+                </select>
+              </div>
+            )}
+          </div>
 
-            <div className="space-y-3 p-4 border rounded-lg">
-                <div className="flex items-center gap-2">
-                    <Checkbox id="showCoach" checked={showCoach} onCheckedChange={(c) => setShowCoach(!!c)} disabled={loading} />
-                    <Label htmlFor="showCoach" className="cursor-pointer">Coach</Label>
-                </div>
-                {showCoach && (
-                    <div className="space-y-2 animate-in fade-in">
-                        <Input placeholder="Nombre" value={coach.nombre} onChange={(e) => setCoach({...coach, nombre: e.target.value})} disabled={loading} />
-                        <Input placeholder="Cédula" maxLength={10} value={coach.cedula} onChange={(e) => setCoach({...coach, cedula: e.target.value})} disabled={loading} />
-                        <Input placeholder="Invocador (Opcional)" value={coach.nombreInvocador} onChange={(e) => setCoach({...coach, nombreInvocador: e.target.value})} disabled={loading} />
-                    </div>
-                )}
+          <div className="space-y-3 p-4 border rounded-lg">
+            <div className="flex items-center gap-2">
+              <Checkbox id="showCoach" checked={showCoach} onCheckedChange={(c) => setShowCoach(!!c)} disabled={loading} />
+              <Label htmlFor="showCoach" className="cursor-pointer">Coach</Label>
             </div>
+            {showCoach && (
+              <div className="space-y-2 animate-in fade-in">
+                <Input placeholder="Nombre" value={coach.nombre} onChange={(e) => setCoach({ ...coach, nombre: e.target.value })} disabled={loading} />
+                <Input placeholder="Cédula" maxLength={10} value={coach.cedula} onChange={(e) => setCoach({ ...coach, cedula: e.target.value })} disabled={loading} />
+                <Input placeholder="Invocador (Opcional)" value={coach.nombreInvocador} onChange={(e) => setCoach({ ...coach, nombreInvocador: e.target.value })} disabled={loading} />
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
       {/* SECCIÓN 4: PAGO (ESTILO SENCILLO) */}
       <div className="space-y-4">
         <h3 className="font-display text-lg font-bold text-primary flex items-center gap-2 border-b border-border pb-2">
-            <CreditCard className="w-5 h-5" /> Información de Pago
+          <CreditCard className="w-5 h-5" /> Información de Pago
         </h3>
-        
+
         <div className="bg-muted/30 p-5 rounded-lg border border-border/60">
-            <h4 className="font-bold text-lg text-primary mb-3">Banco Pichincha</h4>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3 text-sm text-foreground">
-                <div><span className="block text-muted-foreground text-xs font-bold uppercase">Titular</span> José Sanmartín</div>
-                <div><span className="block text-muted-foreground text-xs font-bold uppercase">C.I.</span> 1727585729</div>
-                <div>
-                    <span className="block text-muted-foreground text-xs font-bold uppercase">Cuenta Ahorros</span>
-                    <div className="flex items-center gap-2 cursor-pointer group" onClick={() => copyToClipboard('2206570945')}>
-                        <span className="font-mono font-bold text-base">2206570945</span>
-                        {copied ? <CheckCircle2 className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4 text-muted-foreground group-hover:text-primary" />}
-                    </div>
-                </div>
-                <div className="sm:col-span-2"><span className="block text-muted-foreground text-xs font-bold uppercase">Email</span> josesanmartin1999@hotmail.com</div>
+          <h4 className="font-bold text-lg text-primary mb-3">Banco Pichincha</h4>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3 text-sm text-foreground">
+            <div><span className="block text-muted-foreground text-xs font-bold uppercase">Titular</span> José Sanmartín</div>
+            <div><span className="block text-muted-foreground text-xs font-bold uppercase">C.I.</span> 1727585729</div>
+            <div>
+              <span className="block text-muted-foreground text-xs font-bold uppercase">Cuenta Ahorros</span>
+              <div className="flex items-center gap-2 cursor-pointer group" onClick={() => copyToClipboard('2206570945')}>
+                <span className="font-mono font-bold text-base">2206570945</span>
+                {copied ? <CheckCircle2 className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4 text-muted-foreground group-hover:text-primary" />}
+              </div>
             </div>
+            <div className="sm:col-span-2"><span className="block text-muted-foreground text-xs font-bold uppercase">Email</span> josesanmartin1999@hotmail.com</div>
+          </div>
         </div>
 
         <div className="pt-2">
-            <div className="flex items-center space-x-3 mb-4 p-3 bg-background rounded-md border border-input">
-                <Checkbox id="yaDeposito" checked={yaDeposito} onCheckedChange={(c) => setYaDeposito(!!c)} disabled={loading} />
-                <div className="grid gap-0.5 leading-none">
-                    <Label htmlFor="yaDeposito" className="text-sm font-semibold cursor-pointer">Ya realicé la transferencia</Label>
-                    <p className="text-xs text-muted-foreground">Marca esta casilla para adjuntar tu comprobante.</p>
-                </div>
+          <div className="flex items-center space-x-3 mb-4 p-3 bg-background rounded-md border border-input">
+            <Checkbox id="yaDeposito" checked={yaDeposito} onCheckedChange={(c) => setYaDeposito(!!c)} disabled={loading} />
+            <div className="grid gap-0.5 leading-none">
+              <Label htmlFor="yaDeposito" className="text-sm font-semibold cursor-pointer">Ya realicé la transferencia</Label>
+              <p className="text-xs text-muted-foreground">Marca esta casilla para adjuntar tu comprobante.</p>
             </div>
+          </div>
 
-            {yaDeposito && (
-                <div className="animate-in fade-in slide-in-from-top-2 p-4 bg-muted/20 rounded-lg border border-border/50">
-                    <Label className="text-sm font-medium mb-2 block">Comprobante de Pago</Label>
-                    <div className="flex items-center gap-3">
-                        <Input type="file" accept="image/*" onChange={handleComprobanteChange} disabled={loading} className="cursor-pointer file:text-primary" />
-                    </div>
-                    <p className="text-xs text-muted-foreground mt-2">Formatos: JPG, PNG. Máximo 1MB.</p>
-                </div>
-            )}
+          {yaDeposito && (
+            <div className="animate-in fade-in slide-in-from-top-2 p-4 bg-muted/20 rounded-lg border border-border/50">
+              <Label className="text-sm font-medium mb-2 block">Comprobante de Pago</Label>
+              <div className="flex items-center gap-3">
+                <Input type="file" accept="image/*" onChange={handleComprobanteChange} disabled={loading} className="cursor-pointer file:text-primary" />
+              </div>
+              <p className="text-xs text-muted-foreground mt-2">Formatos: JPG, PNG. Máximo 1MB.</p>
+            </div>
+          )}
         </div>
       </div>
 
       {/* INFORMACIÓN ADICIONAL */}
       <div className="space-y-6 pt-4">
         <div className="space-y-3">
-             <Label className="text-base font-semibold">¿Han participado en otro torneo?</Label>
-             <RadioGroup value={participadoTorneo} onValueChange={setParticipadoTorneo} className="flex gap-6" disabled={loading}>
-               <div className="flex items-center space-x-2"><RadioGroupItem value="si" id="t-si" /><Label htmlFor="t-si">Sí</Label></div>
-               <div className="flex items-center space-x-2"><RadioGroupItem value="no" id="t-no" /><Label htmlFor="t-no">No</Label></div>
-             </RadioGroup>
+          <Label className="text-base font-semibold">¿Han participado en otro torneo?</Label>
+          <RadioGroup value={participadoTorneo} onValueChange={setParticipadoTorneo} className="flex gap-6" disabled={loading}>
+            <div className="flex items-center space-x-2"><RadioGroupItem value="si" id="t-si" /><Label htmlFor="t-si">Sí</Label></div>
+            <div className="flex items-center space-x-2"><RadioGroupItem value="no" id="t-no" /><Label htmlFor="t-no">No</Label></div>
+          </RadioGroup>
         </div>
         <div className="flex items-start space-x-3 p-4 bg-muted/20 rounded-lg border border-border/50">
-            <Checkbox id="aceptaReglas" checked={aceptaReglas} onCheckedChange={(c) => setAceptaReglas(!!c)} required disabled={loading} className="mt-0.5" />
-            <Label htmlFor="aceptaReglas" className="cursor-pointer text-sm leading-snug">
-              He leído y acepto las{" "}
-              <button
-                type="button"
-                onClick={abrirReglamentoPDF}
-                className="text-primary hover:underline font-bold focus:outline-none"
-              >
-                reglas del torneo
-              </button>
-              .
-            </Label>
+          <Checkbox id="aceptaReglas" checked={aceptaReglas} onCheckedChange={(c) => setAceptaReglas(!!c)} required disabled={loading} className="mt-0.5" />
+          <Label htmlFor="aceptaReglas" className="cursor-pointer text-sm leading-snug">
+            He leído y acepto las{" "}
+            <button
+              type="button"
+              onClick={abrirReglamentoPDF}
+              className="text-primary hover:underline font-bold focus:outline-none"
+            >
+              reglas del torneo
+            </button>
+            .
+          </Label>
         </div>
       </div>
 
