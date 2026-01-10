@@ -39,7 +39,7 @@ const games = [
     isMain: false,
     image: lolLogo,
     details: lolTournamentDetails,
-    limitDate: '2025-12-29', // 1 día antes
+    limitDate: '2026-01-11', // 1 día antes
   },
   {
     id: 'valorant',
