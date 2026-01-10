@@ -13,7 +13,7 @@ interface GamesSectionProps {
 const lolTournamentDetails = [
   { label: 'Hora de inicio (Tentativo)', value: '14:00' },
   { label: 'Modalidad', value: 'Online' },
-  { label: 'Fecha', value: '26 y 27 de Diciembre' },
+  { label: 'Fecha', value: '9 y 10 de Enero' },
   { label: 'Formato', value: 'Torneo' },
   { label: 'Servidor', value: 'LAN' },
   { label: 'Estructura', value: 'BO1 (Eliminación Directa)' },
@@ -40,6 +40,7 @@ const games = [
     image: lolLogo,
     details: lolTournamentDetails,
     limitDate: '2026-01-11', // 1 día antes
+
   },
   {
     id: 'valorant',
